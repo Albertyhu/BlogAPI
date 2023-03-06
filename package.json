@@ -1,0 +1,45 @@
+{
+  "name": "blogapisite",
+  "version": "1.0.0",
+  "description": "\"This is a blog API.\"",
+  "main": "app.js",
+  "scripts": {
+    "test": "test",
+    "build:css": "postcss public/stylesheets/tailwind.css -o public/stylesheets/style.css",
+    "devstart": "npm run build:css && nodemon ./bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Albertyhu/BlogAPI.git"
+  },
+  "author": "Albert",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Albertyhu/BlogAPI/issues"
+  },
+  "homepage": "https://github.com/Albertyhu/BlogAPI#readme",
+  "dependencies": {
+    "async": "^3.2.4",
+    "autoprefixer": "^10.4.13",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "cookie-parse": "^0.4.0",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.8",
+    "express": "^4.18.2",
+    "express-flash": "^0.0.2",
+    "express-session": "^1.17.3",
+    "express-validator": "^6.15.0",
+    "he": "^1.2.0",
+    "jsonwebtoken": "^9.0.0",
+    "luxon": "^3.3.0",
+    "mongoose": "^7.0.0",
+    "nodemon": "^2.0.21",
+    "passport": "^0.6.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.2.7"
+  }
+}

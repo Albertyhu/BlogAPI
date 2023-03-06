@@ -1,0 +1,12 @@
+    <div class = 'w-full !my-[50px] !flex justify-between text-[25px] sm:text-2xl'>
+		<% var ButtonStyle ="rounded-full p-[10px] active:translate-x-[5px] active:translate-y-[5px] cursor-pointer border-white border-2 text-center w-fit sm:w-[150px] select-none text-white mx-auto" %>
+        <button 
+            type = "submit"
+            class = "<%= ButtonStyle %> hover:bg-gray-800 bg-[#99cbae]"
+        >Submit</button>
+        <button 
+            type = "button"
+            onClick = "location.href='/'"
+            class = "<%= ButtonStyle %> hover:bg-gray-300 bg-[#dbdbdb]"
+        >Cancel</button>
+    </div>

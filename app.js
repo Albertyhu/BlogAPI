@@ -3,13 +3,37 @@ const path = require('path');
 const mongoose = require('mongoose'); 
 var bodyParser = require('body-parser');
 const app = express(); 
+const dotenv = require('dotenv'); 
+const cors = require('cors'); 
+if (process.env.NODE_ENV !== 'production') {
+    require("dotenv").config();
+}
+
+const passport = require('passport'); 
+
+var corsOptions = {
+    origin: ["http://localhost:3000"],
+    optionsSuccessStatus: 200
+}
+
+const mongoDb = `${process.env.MONGOURL}`;
+
+mongoose.connect(mongoDb, { useUnifiedTopology: true, useNewUrlParser: true });
+
+const db = mongoose.connection;
+
+db.on("error", console.error.bind(console, "mongo connection error"));
 
 app.set('views', __dirname + '/views'); 
 app.set('view engine', "EJS"); 
 
-const mainRoute = require('./route/mainRoute.js'); 
+const mainRoute = require('./route/api.js'); 
+const postRoute = require('./route/postAPI.js')
+app.use(cors()); 
 
 app.use('/', mainRoute); 
+
+app.use('/post', postRoute)
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -19,6 +43,12 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }));
+
+//This makes sure that the corsOptions are universally applied 
+app.options('*', cors(corsOptions));
+
+const { populate } = require('./controller/sampleData.js')
+//populate(); 
 
 app.use(function (req, res, next) {
     next(createError(404));
@@ -35,5 +65,8 @@ app.use(function (err, req, res, next) {
     })
 
 })
+app.listen(80, function () {
+    console.log('CORS-enabled web server listening on port 80')
+})
 
-app.listen(3000, () => console.log("app listening on port 3000!"));
+

@@ -1,0 +1,7 @@
+1. caching 
+2. JWT Token authentication feature 
+3. filtering 
+4. searching 
+5. commenting 
+6. creating a draft and publishing a post 
+7. ability to update user profile 

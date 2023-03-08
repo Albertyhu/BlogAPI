@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\model",
+    "\\public",
+    "\\public\\assets",
+    "\\public\\assets\\images",
+    "\\public\\stylesheets",
+    "\\route",
+    "\\util",
+    "\\views",
+    "\\views\\authentication"
+  ],
+  "SelectedNode": "\\controller\\userController.js",
+  "PreviewInSolutionExplorer": false
+}

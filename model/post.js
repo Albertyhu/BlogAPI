@@ -13,9 +13,9 @@ const Post = new Schema({
     images: [{ data: Buffer, contentType: String }],
     abstract: { type: String },
     category: [{ type: Schema.Types.ObjectId, ref: "Category" }],
-    tag: [{ type: String }],
-    comments: {type: Schema.Types.ObjectId, ref: "Comment"}, 
-
+    tag: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
+    comments: [{type: Schema.Types.ObjectId, ref: "Comment"}], 
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }], 
 })
 
 Post.virtual("formatted_datePublished").get(function () {

@@ -1,0 +1,4 @@
+3/7/23
+How is a post by one author retrieved?
+You have to pass the id of the author.
+Then you have pass the id of the post. 

@@ -2,9 +2,10 @@ const User = require('../model/user');
 const { body, validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
-const passport = require("passport");
 const bcrypt = require('bcrypt');
 const checkEmail = require('../util/checkEmail.js')
+const jwt = require('jsonwebtoken');
+const passport = require("passport");
 
 var dummyData = {
     username: "Bob",
@@ -19,11 +20,27 @@ exports.SignIn = (req, res, next) => {
     })
 }
 
-//exports.Login_Post = passport.authenticate("local", {
-//    successRedirect: '/',
-//    failureRedirect: '/login',
-//    failureFlash: true,
-//})
+//The option session dictates whether you want the server to handle storing
+//a session for the user to be logged in. This is set to false, because we don't want
+// the server to handle it. It's done using a token given to the client.
+//This promotes stateless authentication. 
+exports.Login = (req, res, next) => {
+    passport.authenticate('local', { sesion: false }, (err, user, info) => {
+        if (err) {
+            return res.status(400).json({ error: err })
+        }
+        if (!user) {
+            return res.status(400).json({ error: "User does not exist." });
+        }
+        req.login(user, { session: false }, (err) => {
+            if (err) {
+                res.send(err)
+            }
+        })
+        const token = jwt.sign(user, process.env.JWT_SECRET);
+        return res.json({ user, token });
+    })(req, res);
+}
 
 exports.Register_get = (req, res, next) => {
     //  const { username, email, password, confirm_password } = dummyData; 
@@ -42,7 +59,7 @@ exports.Register_get = (req, res, next) => {
 
 }
 
-exports.Register_post = [
+exports.Register = [
     body("username")
         .trim()
         .isLength({ min: 1 })
@@ -62,13 +79,13 @@ exports.Register_post = [
         .isLength({ min: 4 })
         .withMessage("Your password must be at least 4 characters long."),
     async (req, res, next) => {
-        var profile_pic = null;
-        if (req.file) {
-            profile_pic = {
-                data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
-                contentType: req.file.mimetype
-            };
-        }
+        //var profile_pic = null;
+        //if (req.file) {
+        //    profile_pic = {
+        //        data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+        //        contentType: req.file.mimetype
+        //    };
+        //}
 
         const {
             username,
@@ -82,21 +99,11 @@ exports.Register_post = [
             const obj = {
                 msg: "The email format is not valid. It must be something along the lines of Bob@email.com."
             }
-            errors.errors.push(obj)
+            errors.errors.push(obj); 
         }
         if (!errors.isEmpty()) {
-            res.render("register", {
-                user: req.user,
-                username: username,
-                email: email,
-                password: password,
-                profile_pic: profile_pic,
-                confirm_password: confirm_password,
-                title: "Create an account",
-                burgerMenu: "/assets/icon/hamburger_menu_white.png",
-                error: errors.array(),
-            })
-            return;
+              
+            return res.status(400).json({error: errors.array()});
         }
         try {
             const hashedPassword = await bcrypt.hash(req.body.password, 10)
@@ -104,19 +111,20 @@ exports.Register_post = [
                 username: username.replace(/\s/g, ''),
                 email: email,
                 password: hashedPassword,
-                profile_pic: profile_pic,
+              //  profile_pic: profile_pic,
                 joinedDate: Date.now(),
                 admin: false,
                 member: false,
             }
             const newUser = new User(obj);
-            newUser.save((err, result) => {
+            await newUser.save((err, user) => {
                 if (err) {
                     console.log("Error in trying to save user: ", err.message)
                     return next(err);
                 }
                 console.log("User is successfully created.")
-                res.redirect(`/join/${result._id}`);
+                const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: 60 * 60})
+                return res.status(200).json({ user, token }); 
             })
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)

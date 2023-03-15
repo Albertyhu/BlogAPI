@@ -41,6 +41,24 @@ exports.GetUser = async (req, res, next) => {
     }
 }
 
+exports.GetUsernameAndEmails = async (req, res, next) => {
+    try {
+        const result = await User.find({})
+            .sort({ username: 1 })
+            .exec(); 
+        var data = []
+        result.forEach(person => {
+            data.push({
+                username: person.username, 
+                email: person.email,
+            })
+        })
+        res.status(200).json(data)
+    } catch (e) {
+        return res.status(404).json({ message: "No users." })
+    }
+}
+
 exports.UpdateUser = async (req, res, next) => {
     
 }

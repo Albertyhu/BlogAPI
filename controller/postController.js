@@ -69,6 +69,24 @@ exports.GetOnePostByAuthor = async (req, res, next) => {
     }
 }
 
+exports.DeletePostById = async (req, res, next) => {
+    const PostId = req.params.id;
+    try {
+        await findByIdAndDelete(PostId, (err, docs) => {
+            if (err) {
+                return res.status(400).json({ message: `Error: ${err}` })
+            }
+            else {
+                return res.status(200).json({ message: "Post has been deleted." })
+            }
+        })
+    } catch (e) {
+        res.status(500).json({ message: "Internal server error." })
+    }
+
+
+}
+
 exports.HandleLikeToggle = async (req, res, next) => {
     try {
         const UserId = req.pasams.userId; 

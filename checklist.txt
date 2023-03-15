@@ -5,3 +5,4 @@
 5. commenting 
 6. creating a draft and publishing a post 
 7. ability to update user profile 
+8. use local

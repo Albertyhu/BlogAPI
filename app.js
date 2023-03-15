@@ -5,12 +5,12 @@ var bodyParser = require('body-parser');
 const app = express(); 
 const dotenv = require('dotenv'); 
 const cors = require('cors'); 
+
 if (process.env.NODE_ENV !== 'production') {
     require("dotenv").config();
 }
 
 const passport = require('passport'); 
-
 var corsOptions = {
     origin: ["http://localhost:3000"],
     optionsSuccessStatus: 200
@@ -28,12 +28,14 @@ app.set('views', __dirname + '/views');
 app.set('view engine', "EJS"); 
 
 const mainRoute = require('./route/api.js'); 
-const postRoute = require('./route/postAPI.js')
+const postRoute = require('./route/postAPI.js');
+const authRoute = require('./route/authAPI.js'); 
+
 app.use(cors()); 
 
 app.use('/', mainRoute); 
-
-app.use('/post', postRoute)
+app.use('/post', postRoute);
+app.use('/auth', authRoute);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

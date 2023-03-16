@@ -79,20 +79,22 @@ exports.Register = [
         .isLength({ min: 4 })
         .withMessage("Your password must be at least 4 characters long."),
     async (req, res, next) => {
-        //var profile_pic = null;
-        //if (req.file) {
-        //    profile_pic = {
-        //        data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
-        //        contentType: req.file.mimetype
-        //    };
-        //}
+        var profile_pic = null;
+        if (req.file) {
+            profile_pic = {
+                data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+                contentType: req.file.mimetype
+            };
+        }
 
         const {
             username,
             email,
             password,
             confirm_password,
-        } = req.body;
+        } = req.body; 
+
+        console.log("req.body: ", req.body) 
 
         const errors = validationResult(req);
         if (!checkEmail(req.body.email)) {

@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
         cb(null, filename)
     }
 
-});
+});  
 const upload = multer({ storage: storage }); 
 
 //router.post('/register', cors(), upload.single("profile_pic"), authController.Register)

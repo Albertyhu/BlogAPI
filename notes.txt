@@ -1,3 +1,7 @@
+3/16/23
+What I learnt today:
+bodyParser or any other parsers should always be defined before routes are defined
+
 3/7/23
 How is a post by one author retrieved?
 You have to pass the id of the author.

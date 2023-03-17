@@ -24,4 +24,4 @@ router.get('/users/:id', cors(), UserController.GetUser)
 //router.get('/login', cors(), AuthController.SignIn)
 
 //router.get('/login', )
-module.exports = router; 
+module.exports = router;   

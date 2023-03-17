@@ -12,7 +12,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 const passport = require('passport'); 
 var corsOptions = {
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "http://localhost:5173"],
     optionsSuccessStatus: 200
 }
 
@@ -27,24 +27,26 @@ db.on("error", console.error.bind(console, "mongo connection error"));
 app.set('views', __dirname + '/views'); 
 app.set('view engine', "EJS"); 
 
-const mainRoute = require('./route/api.js'); 
-const postRoute = require('./route/postAPI.js');
-const authRoute = require('./route/authAPI.js'); 
-
 app.use(cors()); 
 
-app.use('/', mainRoute); 
-app.use('/post', postRoute);
-app.use('/auth', authRoute);
+app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }));
+
+//the body parse lines should always be defined before routes 
+const mainRoute = require('./route/api.js');
+const postRoute = require('./route/postAPI.js');
+const authRoute = require('./route/authAPI.js'); 
+
+app.use('/', mainRoute);
+app.use('/post', postRoute);
+app.use('/auth', authRoute);
 
 //This makes sure that the corsOptions are universally applied 
 app.options('*', cors(corsOptions));
@@ -67,8 +69,8 @@ app.use(function (err, req, res, next) {
     })
 
 })
-app.listen(80, function () {
-    console.log('CORS-enabled web server listening on port 80')
+app.listen(process.env.PORT_NUMBER, function () {
+    console.log(`CORS-enabled web server listening on port ${process.env.PORT_NUMBER}`)
 })
 
 

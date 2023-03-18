@@ -27,10 +27,13 @@ exports.SignIn = (req, res, next) => {
 exports.Login = (req, res, next) => {
     passport.authenticate('local', { sesion: false }, (err, user, info) => {
         if (err) {
-            return res.status(400).json({ error: err })
+            return res.status(400).json({ message: err })
         }
         if (!user) {
-            return res.status(400).json({ error: "User does not exist." });
+            return res.status(400).json({ message: "User does not exist." });
+        }
+        if (req.body.password != user.password) {
+            return res.status(400).json({message: "The password is incorrect"})
         }
         req.login(user, { session: false }, (err) => {
             if (err) {
@@ -91,6 +94,7 @@ exports.Register = [
             return true
         }),
     async (req, res, next) => {
+        console.log("fire")
         var profile_pic = null;
         if (req.file) {
             profile_pic = {
@@ -145,10 +149,9 @@ exports.Register = [
             }
             const newUser = new User(obj);
             const savedUser = await newUser.save(); 
-
             console.log("User is successfully created.")
             const token = jwt.sign(savedUser.toJSON(), process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-            return res.status(200).json({ user: savedUser, token, message: "Users is successfully saved in the database" });
+            return res.status(200).json({ user: savedUser, token, message: "User is successfully saved in the database" });
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
             res.status(500).json({ error: 'e.message' });

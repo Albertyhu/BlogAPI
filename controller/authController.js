@@ -69,7 +69,12 @@ exports.Register = [
         .trim()
         .isLength({ min: 1 })
         .withMessage("You must type your email address. ")
-        .escape(),
+        .custom((value) => {
+            if (!checkEmail(value)) {
+                throw new Error("The email format is not valid. It must be something along the lines of Bob@email.com.");
+            }
+            return true; 
+        }), 
     body("password")
         .trim()
         .isLength({ min: 4 })
@@ -77,7 +82,7 @@ exports.Register = [
     body("confirm_password")
         .trim()
         .isLength({ min: 4 })
-        .withMessage("Your password must be at least 4 characters long.")
+        .withMessage("Your confirmation password must be at least 4 characters long.")
         .custom((value, { req }) => {
             if (value != req.body.password) {
                 throw new Error("Your password and confirmation password should match.")
@@ -101,19 +106,32 @@ exports.Register = [
             confirm_password,
         } = req.body; 
 
-        console.log("req.body: ", req.body) 
+       // console.log("req.body: ", req.body) 
 
         const errors = validationResult(req);
-        if (!checkEmail(req.body.email)) {
-            const obj = { 
-                msg: "The email format is not valid. It must be something along the lines of Bob@email.com."
+
+        const UserList = await User.find({})
+
+        UserList.forEach(val => {
+            if (val.username == username.trim()) {
+                const obj = {
+                    param: "username",
+                    msg: "That username already exists in our database."
+                }
+                errors.errors.push(obj)
             }
-            errors.errors.push(obj); 
-        }
+            if (val.email.toLowerCase() == email.trim().toLowerCase()) {
+                const obj = {
+                    param: "email",
+                    msg: "That email already exists in our database."
+                }
+                errors.errors.push(obj)
+            }
+        })
+
         if (!errors.isEmpty()) {
             return res.status(400).json({error: errors.array()});
         }
-        return res.status(200).json({message: "Users is successfully save d in the database"})
         try {
             const hashedPassword = await bcrypt.hash(req.body.password, 10)
             const obj = {
@@ -126,18 +144,14 @@ exports.Register = [
                 member: false,
             }
             const newUser = new User(obj);
-            await newUser.save((err, user) => {
-                if (err) {
-                    console.log("Error in trying to save user: ", err.message)
-                    return next(err);
-                }
-                console.log("User is successfully created.")
-                const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: 60 * 60})
-                return res.status(200).json({ user, token }); 
-            })
+            const savedUser = await newUser.save(); 
+
+            console.log("User is successfully created.")
+            const token = jwt.sign(savedUser.toJSON(), process.env.JWT_SECRET, { expiresIn: 60 * 60 })
+            return res.status(200).json({ user: savedUser, token, message: "Users is successfully saved in the database" });
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
-            res.status(500).json({ error: 'Server error' });
+            res.status(500).json({ error: 'e.message' });
         }
     }
 ]

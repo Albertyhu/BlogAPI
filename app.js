@@ -5,12 +5,15 @@ var bodyParser = require('body-parser');
 const app = express(); 
 const dotenv = require('dotenv'); 
 const cors = require('cors'); 
+const passport = require('passport');
+//const initialize = require("./passport.config.js");
+
+//initialize(passport);
 
 if (process.env.NODE_ENV !== 'production') {
     require("dotenv").config();
 }
 
-const passport = require('passport'); 
 var corsOptions = {
     origin: ["http://localhost:3000", "http://localhost:5173"],
     optionsSuccessStatus: 200

@@ -4,6 +4,7 @@ const cors = require('cors');
 const UserController = require('../controller/userController.js'); 
 const postController = require('../controller/postController.js'); 
 
+
 router.get('/', cors(), (req, res) => {
     res.json({ msg: 'This is CORS-enabled for a Single Route' })
 }); 

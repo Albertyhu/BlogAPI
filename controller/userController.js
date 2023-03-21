@@ -62,3 +62,21 @@ exports.GetUsernameAndEmails = async (req, res, next) => {
 exports.UpdateUser = async (req, res, next) => {
     
 }
+
+
+exports.DeleteUser = (req, res, next) => {
+    console.log("Deleting user")
+    try {
+        const result = User.findByIdAndDelete(req.params.id)
+        if (result && result.deletedCount > 0) {
+            res.status(200).json({ message: "User has been deleted" });
+        }
+        else {
+            const response = result.json();
+            res.status(500).json({ message: "Internal service error: " + response.error });
+        }
+    } catch (e) {
+        console.log("Error in deleting user: ", e)
+        res.status(500).json({ message: "Internal service error", error: e.message });
+    }
+}

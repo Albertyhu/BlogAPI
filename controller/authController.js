@@ -20,34 +20,6 @@ exports.SignIn = (req, res, next) => {
     })
 }
 
-//The option session dictates whether you want the server to handle storing
-//a session for the user to be logged in. This is set to false, because we don't want
-// the server to handle it. It's done using a token given to the client.
-//This promotes stateless authentication.
-//exports.Login = (req, res, next) => {
-//    passport.authenticate('local', { session: false }, async (err, user, info) => {
-//        if (err) {
-//            return res.status(400).json({ message: err })
-//        }
-//        if (!user) {
-//            return res.status(401).json({ message: "User does not exist." });
-//        }
-//        if (await !bcrypt.compare(req.body.password, user.password)) {
-//            return res.status(401).json({ message: "The password is incorrect" })
-
-//        }
-//        req.login(user, { session: false }, (err) => {
-//            if (err) {
-//                res.send(err)
-//            }
-//        })
-//        const token = jwt.sign(user, process.env.JWT_SECRET);
-//        return res.status(200).json({ user, token });
-
-//    })(req, res);
-//}
-
-
 exports.Login = async (req, res, next) => {
     const result = await User.findOne({ username: req.body.username }); 
     if (!result) {
@@ -62,28 +34,13 @@ exports.Login = async (req, res, next) => {
             email: result.email,
             profile_pic: result.profile_pic,
             joinedDate: result.joinedDate, 
+            id: result._id, 
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
         return res.status(200).json({user: user, token, message: "User is signed in."})
     }
 }
 
-exports.Register_get = (req, res, next) => {
-    //  const { username, email, password, confirm_password } = dummyData; 
-    User.find({}, (err, result) => {
-        if (err)
-            return next(err);
-
-        res.render("register", {
-            user: req.user,
-            existingUsers: result,
-            title: "Create an account",
-            burgerMenu: "/assets/icon/hamburger_menu_white.png",
-
-        })
-    })
-
-}
 
 exports.Register = [
     body("username")
@@ -117,7 +74,6 @@ exports.Register = [
             return true
         }),
     async (req, res, next) => {
-        console.log("fire")
         var profile_pic = null;
         if (req.file) {
             profile_pic = {
@@ -126,14 +82,14 @@ exports.Register = [
             };
         }
 
+        console.log("req.file: ", req.file)
+
         const {
             username,
             email,
             password,
             confirm_password,
         } = req.body; 
-
-       // console.log("req.body: ", req.body) 
 
         const errors = validationResult(req);
 
@@ -165,40 +121,31 @@ exports.Register = [
                 username: username.replace(/\s/g, ''),
                 email: email,
                 password: hashedPassword,
-              //  profile_pic: profile_pic,
+                profile_pic: profile_pic,
                 joinedDate: Date.now(),
                 admin: false,
                 member: false,
             }
             const newUser = new User(obj);
             const savedUser = await newUser.save(); 
+
+            const userDate = {
+                username: savedUser.username, 
+                email: savedUser.email, 
+                joinedDate: savedUser.joinedDate, 
+                profile_pic: savedUser.profile_pic, 
+                id: savedUser._id, 
+            }
+
             console.log("User is successfully created.")
             const token = jwt.sign(savedUser.toJSON(), process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-            return res.status(200).json({ user: savedUser, token, message: "User is successfully saved in the database" });
+            return res.status(200).json({ user: userDate, token, message: "User is successfully saved in the database" });
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
             res.status(500).json({ error: 'e.message' });
         }
     }
 ]
-
-//for development purposes 
-exports.RegisterTest = (req, res, next) => {
-    console.log("req.body: ", req.body)
-    if (typeof req.body == "undefined") {
-        rest.status(500).json({message: "Something went wrong."})
-    }
-}
-
-
-exports.LogOut = (req, res, next) => {
-    req.logout(function (err) {
-        if (err) {
-            return next(err);
-        }
-        res.redirect("/");
-    });
-}
 
 exports.ChangePassword_get = (req, res, next) => {
     res.render('user/passwordForm', {
@@ -260,3 +207,4 @@ exports.ChangePassword_post = [
         }
     }
 ]
+

@@ -19,6 +19,7 @@ router.get('/users', cors(), UserController.GetAllUsers)
 
 router.get('/users/:id', cors(), UserController.GetUser)
 
+router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
 
 //router.get('/register', cors(), AuthController.Register)
 

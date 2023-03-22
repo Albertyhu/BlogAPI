@@ -64,13 +64,8 @@ app.use(function (req, res, next) {
 app.use(function (err, req, res, next) {
     res.locals.message = err.message; 
     res.status(err.status || 500); 
-    res.render("error", {
-        user: req.user,
-        title: "Error",
-        error: err.message, 
-        burgerMenu: "/assets/icon/hamburger_menu_white.png",
-    })
-
+    console.log("Error: ", err)
+    return res.status(500).json({ error: [{param: "Server", msg: err.message}]})
 })
 app.listen(process.env.PORT_NUMBER, function () {
     console.log(`CORS-enabled web server listening on port ${process.env.PORT_NUMBER}`)

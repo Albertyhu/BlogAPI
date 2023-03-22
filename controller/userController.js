@@ -41,6 +41,25 @@ exports.GetUser = async (req, res, next) => {
     }
 }
 
+exports.GetUserProfilePicture = async (req, res, next) => {
+    try {
+        await User.findById(req.params.id)
+            .then(result => {
+                if (!result) {
+                    return res.status(404).json({message: "User is not found"})
+                }
+                if (!result.profile_pic) {
+                    return res.status(404).json({messaage: "The user's profile picture does not exist."})
+                }
+                return res.status(200).json({message: "Profile picture found", profile_pic: result.profile_pic})
+            })
+    }
+    catch (e) {
+        return res.status(500).json({ error: [{ param: "server", msg: "Internal service error: " + e }] })
+
+    }
+}
+
 exports.GetUsernameAndEmails = async (req, res, next) => {
     try {
         const result = await User.find({})
@@ -64,19 +83,17 @@ exports.UpdateUser = async (req, res, next) => {
 }
 
 
-exports.DeleteUser = (req, res, next) => {
+exports.DeleteUser = async (req, res, next) => {
     console.log("Deleting user")
-    try {
-        const result = User.findByIdAndDelete(req.params.id)
-        if (result && result.deletedCount > 0) {
+    await User.deleteOne({ _id: req.params.id })
+        .then(result => {
+            console.log("User has successfully been deleted.")
             res.status(200).json({ message: "User has been deleted" });
-        }
-        else {
-            const response = result.json();
-            res.status(500).json({ message: "Internal service error: " + response.error });
-        }
-    } catch (e) {
-        console.log("Error in deleting user: ", e)
-        res.status(500).json({ message: "Internal service error", error: e.message });
-    }
+        })
+        .catch(e => {
+            console.log("Error in deleting user: ", e)
+            res.status(500).json({ message: "Internal service error", error: e.message });
+        })
+
 }
+

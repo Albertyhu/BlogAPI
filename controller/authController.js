@@ -21,26 +21,49 @@ exports.SignIn = (req, res, next) => {
 }
 
 exports.Login = async (req, res, next) => {
-    const result = await User.findOne({ username: req.body.username }); 
-    if (!result) {
-        return res.status(404).json({ message: "There is no one in the database that goes by that username." });
-    }
-    else {
-        if (!(await bcrypt.compare(req.body.password, result.password))) {
-            return res.status(404).json({ message: "Password is incorrect." })
+    var errors = []; 
+    try {
+        const result = await User.findOne({ username: req.body.username })
+
+        if (!result) {
+            const error = {
+                param: "username",
+                msg: "There is no one in the database that goes by that username.",
+            }
+            errors.push(error)
+        }
+        else {
+            const passwordValid = await bcrypt.compare(req.body.password, result.password)
+            if (!passwordValid) {
+                const error = {
+                    param: "password",
+                    msg: "Password is incorrect",
+                }
+                errors.push(error)
+            }
+        }
+        if (errors.length > 0) {
+            return res.status(404).json({ error: errors })
         }
         const user = {
             username: result.username,
             email: result.email,
-            profile_pic: result.profile_pic,
-            joinedDate: result.joinedDate, 
-            id: result._id, 
+            joinedDate: result.joinedDate,
+            id: result._id,
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-        return res.status(200).json({user: user, token, message: "User is signed in."})
+        console.log("profile_picture ", result.profile_pic)
+
+        return res.status(200).json({
+            user: user,
+            token,
+            message: "User is signed in.", 
+            profile_pic: result.profile_pic ? result.profile_pic : null,
+        })
+    } catch (e) {
+        return res.status(500).json({ error: [{param: "server", msg: "Internal service error: " + e }]})
     }
 }
-
 
 exports.Register = [
     body("username")
@@ -56,12 +79,13 @@ exports.Register = [
             if (!checkEmail(value)) {
                 throw new Error("The email format is not valid. It must be something along the lines of Bob@email.com.");
             }
-            return true; 
-        }), 
+            return true;
+        }),
     body("password")
         .trim()
         .isLength({ min: 4 })
         .withMessage("Your password must be at least 4 characters long."),
+    body("profile_pic"),
     body("confirm_password")
         .trim()
         .isLength({ min: 4 })
@@ -74,22 +98,10 @@ exports.Register = [
             return true
         }),
     async (req, res, next) => {
-        var profile_pic = null;
-        if (req.file) {
-            profile_pic = {
-                data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
-                contentType: req.file.mimetype
-            };
-        }
-
-        console.log("req.file: ", req.file)
-
         const {
             username,
             email,
-            password,
-            confirm_password,
-        } = req.body; 
+        } = req.body;
 
         const errors = validationResult(req);
 
@@ -117,32 +129,43 @@ exports.Register = [
         }
         try {
             const hashedPassword = await bcrypt.hash(req.body.password, 10)
+            console.log("req.file: ", req.file)
+
+            var ProfilePic = null;
+
+            if (req.file) {
+                ProfilePic = {
+                    data: req.file.buffer,
+                    contentType: req.file.mimetype,
+                }
+            }
             const obj = {
                 username: username.replace(/\s/g, ''),
                 email: email,
                 password: hashedPassword,
-                profile_pic: profile_pic,
                 joinedDate: Date.now(),
-                admin: false,
-                member: false,
+                profile_pic: ProfilePic, 
             }
+
             const newUser = new User(obj);
-            const savedUser = await newUser.save(); 
+            const result = await newUser.save();
 
-            const userDate = {
-                username: savedUser.username, 
-                email: savedUser.email, 
-                joinedDate: savedUser.joinedDate, 
-                profile_pic: savedUser.profile_pic, 
-                id: savedUser._id, 
+            const savedUser = {
+                username: result.username,
+                email: result.email,
+                joinedDate: result.joinedDate,
+                id: result._id,
             }
-
-            console.log("User is successfully created.")
-            const token = jwt.sign(savedUser.toJSON(), process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-            return res.status(200).json({ user: userDate, token, message: "User is successfully saved in the database" });
+            const token = jwt.sign(savedUser, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
+            return res.status(200).json({
+                user: savedUser,
+                token,
+                message: "User is successfully saved in the database",
+                profile_pic: result.profile_pic ? result.profile_pic : null, 
+            });
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
-            res.status(500).json({ error: 'e.message' });
+            res.status(500).json({ error: e.message });
         }
     }
 ]

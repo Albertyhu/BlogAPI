@@ -135,7 +135,9 @@ exports.Register = [
 
             if (req.file) {
                 ProfilePic = {
-                    data: req.file.buffer,
+                  //  data: req.file.path,
+                  //  data: Buffer.from(req.file.path, "base64"),
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
                     contentType: req.file.mimetype,
                 }
             }

@@ -5,19 +5,18 @@ const authController = require('../controller/authController.js');
 const path = require('path')
 const multer = require('multer');
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, "public/uploads")
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname);
+        const filename = `${Date.now()}-${file.filename}${ext}`;
+        cb(null, filename)
+    },
+});
 
-//const storage = multer.diskStorage({
-//    destination: function (req, file, cb) {
-//        cb(null, "public/uploads")
-//    },
-//    filename: function (req, file, cb) {
-//        const ext = path.extname(file.originalname);
-//        const filename = `${Date.now()}-${file.filename}${ext}`;
-//        cb(null, filename)
-//    },
-//});
-
-const storage = multer.memoryStorage();
+//const storage = multer.memoryStorage();
 
 const upload = multer({
     limits: { fileSize: 1024 * 1024 * 5 },

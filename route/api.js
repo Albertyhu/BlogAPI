@@ -3,6 +3,31 @@ const router = express.Router();
 const cors = require('cors'); 
 const UserController = require('../controller/userController.js'); 
 const postController = require('../controller/postController.js'); 
+const path = require('path')
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, "public/uploads")
+    },
+    filename: function (req, file, cb) {
+        const ext = path.extname(file.originalname);
+        const filename = `${Date.now()}-${file.filename}${ext}`;
+        cb(null, filename)
+    },
+});
+
+
+const upload = multer({
+    limits: { fileSize: 1024 * 1024 * 5 },
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Only image files are allowed!'));
+        }
+        cb(null, true);
+    }
+}); 
 
 
 router.get('/', cors(), (req, res) => {
@@ -21,11 +46,8 @@ router.get('/users/:id', cors(), UserController.GetUser)
 
 router.get('/users/:id/profilepicture', cors(), UserController.GetUserProfilePicture)
 
+router.put('/users/:id/uploadnewpicture', cors(), upload.single("profile_pic"), UserController.UploadNewProfilePicture)
+
 router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
 
-//router.get('/register', cors(), AuthController.Register)
-
-//router.get('/login', cors(), AuthController.SignIn)
-
-//router.get('/login', )
-module.exports = router;   
+module.exports = router;    

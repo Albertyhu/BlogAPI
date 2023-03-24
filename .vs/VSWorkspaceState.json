@@ -2,15 +2,15 @@
   "ExpandedNodes": [
     "",
     "\\controller",
+    "\\model",
     "\\public",
     "\\public\\uploads",
     "\\route",
     "\\sampleData",
-    "\\util",
     "\\views",
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\util\\dataHooks.js",
+  "SelectedNode": "\\package.json",
   "PreviewInSolutionExplorer": false
 }

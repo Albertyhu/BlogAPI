@@ -6,6 +6,7 @@ const path = require("path");
 const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
+const bcrypt = require("bcrypt")
 
 const { BufferImage, findDuplicates } = dataHooks(); 
 
@@ -187,8 +188,69 @@ exports.UpdateUserProfile = [
     }
 ]
 
+exports.ChangePassword = [
+    body('current_password')
+        .trim()
+        .isLength({ min: 4 })
+        .withMessage("Your current password must be at least 4 characters long."),
+    body("new_password")
+        .trim()
+        .isLength({ min: 4 })
+        .withMessage("Your password must be at least 4 characters long."),
+    body("confirm_password")
+        .trim()
+        .isLength({ min: 4 })
+        .withMessage("Your confirmation password must be at least 4 characters long.")
+        .custom((val, { req }) => {
+            if (val != req.body.new_password) {
+                throw new Error("Your confirmation password must match your new password")
+            }
+        }),
+    async (req, res) => {
+        const errors = validationResult(req)
+        const {
+            current_password,
+            new_password,
+            confirm_password
+        } = req.body;  
+        console.log("id: ", req.params.id)
+        console.log("Current password: ", req.body.current_password)
+        console.log("new_password: ", new_password)
+        console.log("confirm_password: ", confirm_password)
 
+        await User.findById(req.params.id)
+        .then(async result => {
+            if (!(await bcrypt.compare(req.body.current_password, result.password))) {
+                errors.errors.push({ param: "current_password", msg: 'The current password you typed is not correct.' })
+            }
+        }).catch(e => {
+            return res.status(500).json({ error: [{ param: "server", msg: e }] })
+        })
 
+        if (!errors.isEmpty()) {
+            return res.status(404).json({ error: errors.array() })
+        } 
+
+        try {
+            const hashedPassword = await bcrypt.hash(req.body.new_password, 10)
+            const obj = {
+                password: hashedPassword,
+                _id: req.params.id,
+            }
+            const updateUser = new User(obj);
+            await User.findByIdAndUpdate(req.params.id, updateUser)
+                .then(result => {
+                    return res.status(200).json({message: "Password has successfully been updated."})
+                })
+                .catch(e => {
+                    return res.status(500).json({ error: [{param: "server", msg: e}]})
+                })
+        } catch (e) {
+            console.log("Error in trying to create new user: ", e.message)
+            res.status(500).json({ error: 'Server error' });
+        }
+    }
+]
 
 exports.DeleteUser = async (req, res, next) => {
     console.log("Deleting user")

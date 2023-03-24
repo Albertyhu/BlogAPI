@@ -31,7 +31,6 @@ const upload = multer({
 
 router.post('/register', cors(), upload.single('profile_pic'), authController.Register)
 
-
 router.post('/login', cors(), authController.Login)
 
 module.exports = router; 

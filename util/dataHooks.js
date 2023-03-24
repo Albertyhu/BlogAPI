@@ -1,5 +1,6 @@
 const fs = require('fs'); 
 const path = require('path'); 
+const User = require("../model/user");
 
 const dataHooks = () => {
     const BufferImage = (File) => {
@@ -14,7 +15,37 @@ const dataHooks = () => {
         return "This works"; 
     }
 
-    return {BufferImage, TestFunction }
+    const findDuplicates = (ID, username, email) => {
+        var Errors = []
+        User.find({})
+            .then(list => {
+                list.forEach(user => {
+                    if (user.email.toLowerCase().trim() == email.toLowerCase().trim()) {
+                        if (user._id != ID) {
+                            Errors.push({
+                                params: "email",
+                                msg: "Another user is already using that email."
+                            })
+                        }
+                    }
+                    if (user.username.trim() == username.trim()) {
+                        if (user._id != ID) {
+                            Errors.push({
+                                params: "username",
+                                msg: "Another user is already using that username."
+                            })
+                        }
+                    }
+                })
+            })
+        return Errors; 
+    }
+
+    return {
+        BufferImage,
+        TestFunction,
+        findDuplicates
+    }
 }
 
 module.exports = dataHooks; 

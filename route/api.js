@@ -48,6 +48,8 @@ router.get('/users/:id/profilepicture', cors(), UserController.GetUserProfilePic
 
 router.put('/users/:id/uploadnewpicture', cors(), upload.single("profile_pic"), UserController.UploadNewProfilePicture)
 
-router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
+router.put('/users/:id/update_user_profile', cors(), upload.single("profile_pic"), UserController.UpdateUserProfile)
 
+router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
+  
 module.exports = router;    

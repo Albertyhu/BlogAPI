@@ -3,6 +3,11 @@ const SampleUsers = require('../sampleData/sampleUsers.js');
 const dataHooks = require('../util/dataHooks.js'); 
 const fs = require("fs"); 
 const path = require("path"); 
+const { body, validationResult } = require("express-validator");
+const checkEmail = require('../util/checkEmail.js');
+const he = require('he');
+
+const { BufferImage, findDuplicates } = dataHooks(); 
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
@@ -49,7 +54,6 @@ exports.GetUser = async (req, res, next) => {
             SocialMediaLinks: user.SocialMediaLinks,
             message: `Successfully fetched ${user.username}`,
         })
-        return res.status(200).json({message})
     } catch (e) {
         return res.status(404).json({ message: `Error in fetching user: ${e}` })
 
@@ -66,7 +70,6 @@ exports.GetUserProfilePicture = async (req, res, next) => {
                 if (!result.profile_pic) {
                     return res.status(404).json({ error: [{ param: "Profile doesn't exist", msg: "The user's profile picture does not exist." }] })
                 }
-              //  console.log("result.profile_pic: ",typeof result.profile_pic)
                 return res.status(200).json({message: "Profile picture found", profile_pic: result.profile_pic})
             })
     }
@@ -78,7 +81,7 @@ exports.GetUserProfilePicture = async (req, res, next) => {
 
 exports.UploadNewProfilePicture = (req, res, next) => {
     try {
-        const { BufferImage } = dataHooks();          
+         
         const BufferedImg = BufferImage(req.file)
         const updates = {
             _id: req.params.id,
@@ -87,7 +90,7 @@ exports.UploadNewProfilePicture = (req, res, next) => {
         const updateUser = new User(updates)
         User.findByIdAndUpdate(req.params.id, updateUser)
             .then(() => {
-                return res.status(200).json({message: "Profile picture has been successfully updates."})
+                return res.status(200).json({message: "Profile picture has been successfully updated."})
             })
             .catch(e => {
                 return res.status(404).json({ error: [{ param: "server", msg: `Error in updating profile picture: ${e}.` }] })
@@ -116,9 +119,75 @@ exports.GetUsernameAndEmails = async (req, res, next) => {
     }
 }
 
-exports.UpdateUser = async (req, res, next) => {
-    
-}
+exports.UpdateUserProfile = [
+    body("username")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("Username field cannot be empty.")
+        .escape(),
+    body("email")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("Your email address field cannot be empty.. ")
+        .custom((value) => {
+            if (!checkEmail(value)) {
+                throw new Error("The email format is not valid. It must be something along the lines of Bob@email.com.");
+            }
+            return true;
+        }),
+    body("profile_pic"),
+    body("biography")
+    .escape(),
+    async (req, res) => {
+        const {
+            username,
+            email,
+            biography
+        } = req.body
+        var errors = validationResult(req);
+        const DuplicateErrors = findDuplicates(req.params.id, req.body.username, req.body.email)
+        errors.errors = errors.errors.concat(DuplicateErrors);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: errors.array() });
+        }
+        try {
+            var ProfilePic = null;
+            var newUpdate = {
+                username: he.decode(username.replace(/\s/g, '')),
+                email: he.decode(email),
+                biography: he.decode(biography),
+                _id: req.params.id
+            }
+
+            if (req.file) {
+                ProfilePic = {
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+                    contentType: req.file.mimetype,
+                }
+                newUpdate.profile_pic = ProfilePic;
+            }
+
+            await User.findByIdAndUpdate(req.params.id, newUpdate)
+                .then((result) => {
+                    const updatedUser = {
+                        username: req.body.username,
+                        email: req.body.email,
+                        joinedDate: result.joinedDate,
+                        id: result._id,
+                    }
+                    console.log(`${req.body.username}'s profile has successfully been updated.`)
+                    return res.status(200).json({ user: updatedUser, message: `${req.body.username}'s profile has successfully been updated.`})
+                })
+                .catch(e => {
+                    return res.status(5000).json({ error: [{param: "server", msg: `${e}`}]})
+                })
+        } catch (e) {
+            return res.status(404).json({error: [{ param: "server", msg: `${e}` }] })
+        }
+    }
+]
+
+
 
 
 exports.DeleteUser = async (req, res, next) => {

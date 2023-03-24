@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const checkEmail = require('../util/checkEmail.js')
 const jwt = require('jsonwebtoken');
 const passport = require("passport");
+const he = require('he');
 
 var dummyData = {
     username: "Bob",
@@ -135,15 +136,13 @@ exports.Register = [
 
             if (req.file) {
                 ProfilePic = {
-                  //  data: req.file.path,
-                  //  data: Buffer.from(req.file.path, "base64"),
                     data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
                     contentType: req.file.mimetype,
                 }
             }
             const obj = {
-                username: username.replace(/\s/g, ''),
-                email: email,
+                username: he.decode(username.replace(/\s/g, '')),
+                email: he.decode(email),
                 password: hashedPassword,
                 joinedDate: Date.now(),
                 profile_pic: ProfilePic, 

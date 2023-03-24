@@ -156,7 +156,7 @@ exports.UpdateUserProfile = [
             var newUpdate = {
                 username: he.decode(username.replace(/\s/g, '')),
                 email: he.decode(email),
-                biography: he.decode(biography),
+                biography: req.body.biography.trim() ? he.decode(req.body.biography) : "",
                 _id: req.params.id
             }
 
@@ -205,31 +205,36 @@ exports.ChangePassword = [
             if (val != req.body.new_password) {
                 throw new Error("Your confirmation password must match your new password")
             }
+            return true;
         }),
-    async (req, res) => {
+    body("over"),
+    async (req, res, next) => {
         const errors = validationResult(req)
         const {
             current_password,
             new_password,
             confirm_password
-        } = req.body;  
+        } = req.body;
         console.log("id: ", req.params.id)
-        console.log("Current password: ", req.body.current_password)
-        console.log("new_password: ", new_password)
-        console.log("confirm_password: ", confirm_password)
-
+        console.log("req.body: ", req.body)
         await User.findById(req.params.id)
         .then(async result => {
             if (!(await bcrypt.compare(req.body.current_password, result.password))) {
                 errors.errors.push({ param: "current_password", msg: 'The current password you typed is not correct.' })
             }
+            if (await bcrypt.compare(req.body.new_password, result.password)) {
+                errors.errors.push({ param: "new_password", msg: 'Your new password must be different from your current password.' })
+            }
+    
+
         }).catch(e => {
             return res.status(500).json({ error: [{ param: "server", msg: e }] })
         })
 
         if (!errors.isEmpty()) {
+            console.log("Error 233: ", errors)
             return res.status(404).json({ error: errors.array() })
-        } 
+        }
 
         try {
             const hashedPassword = await bcrypt.hash(req.body.new_password, 10)
@@ -243,11 +248,12 @@ exports.ChangePassword = [
                     return res.status(200).json({message: "Password has successfully been updated."})
                 })
                 .catch(e => {
+                    console.log("Error 249: ", e)
                     return res.status(500).json({ error: [{param: "server", msg: e}]})
                 })
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
-            res.status(500).json({ error: 'Server error' });
+            res.status(500).json({ error: [{param: "server", msg:`Error 253: ${e}`}] });
         }
     }
 ]

@@ -46,11 +46,11 @@ router.get('/users/:id', cors(), UserController.GetUser)
 
 router.get('/users/:id/profilepicture', cors(), UserController.GetUserProfilePicture)
 
+router.put('/users/:id/editpassword', cors(), upload.none(), UserController.ChangePassword)
+
 router.put('/users/:id/uploadnewpicture', cors(), upload.single("profile_pic"), UserController.UploadNewProfilePicture)
 
 router.put('/users/:id/update_user_profile', cors(), upload.single("profile_pic"), UserController.UpdateUserProfile)
-
-router.put('/users/:id/editpassword', cors(), UserController.ChangePassword)
 
 router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
   

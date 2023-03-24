@@ -11,6 +11,6 @@
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\package.json",
+  "SelectedNode": "\\controller\\userController.js",
   "PreviewInSolutionExplorer": false
 }

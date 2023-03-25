@@ -2,15 +2,16 @@
   "ExpandedNodes": [
     "",
     "\\controller",
-    "\\model",
+    "\\middleware",
     "\\public",
     "\\public\\uploads",
     "\\route",
     "\\sampleData",
+    "\\util",
     "\\views",
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\controller\\userController.js",
+  "SelectedNode": "\\route\\api.js",
   "PreviewInSolutionExplorer": false
 }

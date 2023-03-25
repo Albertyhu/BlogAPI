@@ -51,6 +51,7 @@ exports.Login = async (req, res, next) => {
             email: result.email,
             joinedDate: result.joinedDate,
             id: result._id,
+            "role": "member", 
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
         console.log("profile_picture ", result.profile_pic)
@@ -156,6 +157,7 @@ exports.Register = [
                 email: result.email,
                 joinedDate: result.joinedDate,
                 id: result._id,
+                "role": "member", 
             }
             const token = jwt.sign(savedUser, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
             return res.status(200).json({

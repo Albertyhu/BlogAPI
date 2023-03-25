@@ -7,7 +7,6 @@ const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
 const bcrypt = require("bcrypt")
-
 const { BufferImage, findDuplicates } = dataHooks(); 
 
 exports.GetAllUsers = async (req, res, next) => {
@@ -215,8 +214,8 @@ exports.ChangePassword = [
             new_password,
             confirm_password
         } = req.body;
-        console.log("id: ", req.params.id)
-        console.log("req.body: ", req.body)
+       // console.log("id: ", req.params.id)
+       // console.log("req.body: ", req.body)
         await User.findById(req.params.id)
         .then(async result => {
             if (!(await bcrypt.compare(req.body.current_password, result.password))) {

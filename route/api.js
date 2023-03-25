@@ -5,6 +5,7 @@ const UserController = require('../controller/userController.js');
 const postController = require('../controller/postController.js'); 
 const path = require('path')
 const multer = require('multer');
+const { verifyToken, checkAdmin } = require("../middleware/verifyMember.js"); 
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -46,11 +47,11 @@ router.get('/users/:id', cors(), UserController.GetUser)
 
 router.get('/users/:id/profilepicture', cors(), UserController.GetUserProfilePicture)
 
-router.put('/users/:id/editpassword', cors(), upload.none(), UserController.ChangePassword)
+router.put('/users/:id/editpassword', cors(), verifyToken, upload.none(), UserController.ChangePassword)
 
-router.put('/users/:id/uploadnewpicture', cors(), upload.single("profile_pic"), UserController.UploadNewProfilePicture)
+router.put('/users/:id/uploadnewpicture', cors(), verifyToken, upload.single("profile_pic"), UserController.UploadNewProfilePicture)
 
-router.put('/users/:id/update_user_profile', cors(), upload.single("profile_pic"), UserController.UpdateUserProfile)
+router.put('/users/:id/update_user_profile', cors(), verifyToken, upload.single("profile_pic"), UserController.UpdateUserProfile)
 
 router.delete('/users/:id/delete', cors(), UserController.DeleteUser)
   

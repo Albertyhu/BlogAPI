@@ -17,7 +17,7 @@ exports.GetAllUsers = async (req, res, next) => {
         res.status(200).json(result)
 
     } catch (err){
-        return res.status(404).json({ message: "No users." })
+        return res.status(404).json({ error: [{ param: "server", msg: err }] })
     }
 }
 

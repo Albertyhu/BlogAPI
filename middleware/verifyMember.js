@@ -28,7 +28,8 @@ exports.verifyToken = (req, res, next) => {
         const bearerToken = bearer[1]; 
         req.token = bearerToken; 
         next()
-    } else{
+    } else {
+        console.log("User is not authorized")
         res.status(403).json({ error: [{ param: "authorization", msg: "User is forbidden" }] })
     }
 }

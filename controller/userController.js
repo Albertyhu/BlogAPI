@@ -7,7 +7,7 @@ const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
 const bcrypt = require("bcrypt")
-const { BufferImage, findDuplicates } = dataHooks(); 
+const { BufferImage, findDuplicateNameAndEmail } = dataHooks(); 
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
@@ -145,7 +145,7 @@ exports.UpdateUserProfile = [
             biography
         } = req.body
         var errors = validationResult(req);
-        const DuplicateErrors = findDuplicates(req.params.id, req.body.username, req.body.email)
+        const DuplicateErrors = findDuplicateNameAndEmail(req.params.id, req.body.username, req.body.email)
         errors.errors = errors.errors.concat(DuplicateErrors);
         if (!errors.isEmpty()) {
             return res.status(400).json({ error: errors.array() });

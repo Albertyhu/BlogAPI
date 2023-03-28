@@ -49,12 +49,13 @@ const mainRoute = require('./route/api.js');
 const postRoute = require('./route/postAPI.js');
 const authRoute = require('./route/authAPI.js'); 
 const categoryRoute = require("./route/categoryAPI.js"); 
-
+const tagRoute = require("./route/tagAPI.js"); 
 
 app.use('/', mainRoute);
 app.use('/post', postRoute);
 app.use('/auth', authRoute);
 app.use('/category', categoryRoute);
+app.use('/tags', tagRoute);
 
 //This makes sure that the corsOptions are universally applied 
 app.options('*', cors(corsOptions));

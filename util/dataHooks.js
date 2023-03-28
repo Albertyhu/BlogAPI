@@ -1,6 +1,7 @@
 const fs = require('fs'); 
 const path = require('path'); 
 const User = require("../model/user");
+const Category = require("../model/category"); 
 
 const dataHooks = () => {
     const BufferImage = (File) => {
@@ -15,7 +16,7 @@ const dataHooks = () => {
         return "This works"; 
     }
 
-    const findDuplicates = (ID, username, email) => {
+    const findDuplicateNameAndEmail = (ID, username, email) => {
         var Errors = []
         User.find({})
             .then(list => {
@@ -40,11 +41,32 @@ const dataHooks = () => {
             })
         return Errors; 
     }
+    const findDuplicateCategory = async (name) => {
+        const result = await Category.find({ name: name })
+        if(result)
+            return { param: "category", msg: "This category already exists." }
+        else
+            return null; 
+    }
+
+    const checkIfArrayHasEmptyValues = arr => {
+        try {
+            arr.forEach(item => {
+                if (item.trim() == "")
+                    return false;
+            })
+            return true;
+        } catch (e) {
+            console.log("Error with the function checkIfArrayHasEmptyValues. Variable arr: ", arr)
+        }
+    }
 
     return {
         BufferImage,
         TestFunction,
-        findDuplicates
+        findDuplicateNameAndEmail,
+        findDuplicateCategory,
+        checkIfArrayHasEmptyValues 
     }
 }
 

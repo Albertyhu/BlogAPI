@@ -32,4 +32,4 @@ exports.verifyToken = (req, res, next) => {
         console.log("User is not authorized")
         res.status(403).json({ error: [{ param: "authorization", msg: "User is forbidden" }] })
     }
-}
+} 

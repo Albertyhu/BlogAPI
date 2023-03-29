@@ -214,8 +214,6 @@ exports.ChangePassword = [
             new_password,
             confirm_password
         } = req.body;
-       // console.log("id: ", req.params.id)
-       // console.log("req.body: ", req.body)
         await User.findById(req.params.id)
         .then(async result => {
             if (!(await bcrypt.compare(req.body.current_password, result.password))) {

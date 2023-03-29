@@ -42,25 +42,31 @@ exports.CreateTag = async (req, res, next) => {
 
 //This function assumes that all values in the array that is retrieved from the client are not empty
 exports.CreateManyTags = async (req, res, next) => {
-    const tagsList = JSON.parse(req.body.tags)
-    console.log("req.body.tags: ", tagsList)
-
-    if (typeof tagsList != 'undefined' && tagsList.length > 0) {
-        if (checkIfArrayHasEmptyValues(tagsList)) {
-            await Tag.insertMany(tagsList)
-                .then(result => {
-                    res.status(200).json({ message: "Tags are successfully saved." })
-                })
-                .catch(e => {
-                    res.status(404).json({ error: [{ param: "server", msg: `There was an error in saving the tags - ${e}` }] })
-                })
-        } else {
-            res.status(404).json({ error: [{ param: "general", msg: "Tags cannot be empty." }] })
+    var tagsList;
+    try {
+        tagsList = JSON.parse(req.body.tags) 
+        if (typeof tagsList != 'undefined' && tagsList.length > 0) {
+            if (checkIfArrayHasEmptyValues(tagsList, "name")) {
+                await Tag.insertMany(tagsList)
+                    .then(result => {
+                        res.status(200).json({ message: "Tags are successfully saved." })
+                    })
+                    .catch(e => {
+                        res.status(404).json({ error: [{ param: "server", msg: `There was an error in saving the tags - ${e}` }] })
+                    })
+            } else { 
+                res.status(404).json({ error: [{ param: "general", msg: "Tags cannot be empty." }] })
+            }
         }
+        else {
+            res.status(400).json({ error: [{param: "general", msg: "There are no tags to be saved to the database."}]})
+            }  
     }
-    else {
-        res.status(400).json({ error: [{param: "general", msg: "There are no tags to be saved to the database."}]})
-    } 
+    catch (e) {
+        console.log("Error in parsing data", e)
+        res.status(400).json({ error: [{ param: "server", msg: `${e}` }] })
+
+    }
 }  
  
 exports.DeleteTags = [

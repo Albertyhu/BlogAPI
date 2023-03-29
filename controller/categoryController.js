@@ -1,7 +1,11 @@
 const Category = require('../model/category.js'); 
 const {body, validationResult } = require("express-validator")
-const { findDuplicateCategory } = require("../util/dataHooks.js");
+const dataHooks = require("../util/dataHooks.js");
 const he = require("he");
+const fs = require('fs');
+const path = require("path");
+
+const { findDuplicateCategory } = dataHooks(); 
 
 exports.CategoryList = (req, res, next) => {
     Category.find({})
@@ -16,7 +20,6 @@ exports.CategoryList = (req, res, next) => {
 
 exports.FindOneCategory = (req, res, next) => {
     Category.findById(req.params.id)
-        .populate("Tag")
         .populate("Post")
         .then(response => {
             res.status(200).json({ category: response })
@@ -35,15 +38,15 @@ exports.CreateCategory = [
     body("description")
         .trim()
         .escape(), 
-    body("tag"),
     async (req, res) => {
-        const { name, description, tag} = req.body; 
+        const { name, description} = req.body; 
         var errors = validationResult(req); 
 
-        var duplicateError = findDuplicateCategory(name); 
+        var duplicateError = await findDuplicateCategory(name); 
         if (duplicateError != null) {
             errors.errors.push(duplicateError)
         }
+        console.log("errors: ", errors)
         if (!errors.isEmpty()) {
             return res.status(400).json({error: errors.array()})
         }
@@ -51,8 +54,7 @@ exports.CreateCategory = [
             var categoryImage = null; 
             var obj = {
                 name: name ? he.decode(name.replace(/\s/g, '')) : "", 
-                description: description.trim() ? he.decode(descrioption.trim()) : "", 
-                tag, 
+                description: description.trim() ? he.decode(description.trim()) : "", 
                 dateCreated: Date.now(),
             }
             if (req.file) {

@@ -7,7 +7,8 @@ const dotenv = require('dotenv');
 const cors = require('cors'); 
 const passport = require('passport');
 const createError = require("http-errors"); 
-
+const handleError = require('./middleware/handleError.js')
+const bodyParserErrorHandler = require('express-body-parser-error-handler')
 //const initialize = require("./passport.config.js");
 
 //initialize(passport);
@@ -38,19 +39,25 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
 
+//app.use(bodyParserErrorHandler());
+
 app.use(express.static(path.join(__dirname, "public")));
  
-app.use(express.json());
+app.use(express.json()); 
 
 app.use(express.urlencoded({ extended: false }));
 
+app.use((req, res, next) => {
+    handleError(express.json(), req, res, next);
+});
+   
 //the body parse lines should always be defined before routes 
 const mainRoute = require('./route/api.js');
 const postRoute = require('./route/postAPI.js');
 const authRoute = require('./route/authAPI.js'); 
 const categoryRoute = require("./route/categoryAPI.js"); 
 const tagRoute = require("./route/tagAPI.js"); 
-
+ 
 app.use('/', mainRoute);
 app.use('/post', postRoute);
 app.use('/auth', authRoute);

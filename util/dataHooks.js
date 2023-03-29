@@ -42,22 +42,25 @@ const dataHooks = () => {
         return Errors; 
     }
     const findDuplicateCategory = async (name) => {
-        const result = await Category.find({ name: name })
-        if(result)
-            return { param: "category", msg: "This category already exists." }
-        else
-            return null; 
+        const result = await Category.find({})
+        if (result.find(val => val.name == name)) {
+            return { param: "name", msg: "This category already exists." }
+        }
+        else { 
+            return null;
+
+        }
     }
 
-    const checkIfArrayHasEmptyValues = arr => {
+    const checkIfArrayHasEmptyValues = (arr, item )=> {
         try {
-            arr.forEach(item => {
-                if (item.trim() == "")
+            arr.forEach(val => {
+                if (val[`${item}`].trim() == "")
                     return false;
             })
             return true;
         } catch (e) {
-            console.log("Error with the function checkIfArrayHasEmptyValues. Variable arr: ", arr)
+            console.log("Error with the function checkIfArrayHasEmptyValues. Variable arr: ", e, arr)
         }
     }
 

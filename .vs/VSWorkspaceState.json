@@ -2,7 +2,6 @@
   "ExpandedNodes": [
     "",
     "\\controller",
-    "\\middleware",
     "\\public",
     "\\public\\uploads",
     "\\route",
@@ -12,6 +11,5 @@
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\middleware\\verifyMember.js",
   "PreviewInSolutionExplorer": false
 }

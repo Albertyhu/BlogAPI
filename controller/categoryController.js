@@ -14,7 +14,7 @@ exports.CategoryList = (req, res, next) => {
             res.status(200).json({ categories: response })
         })
         .catch(e => {
-            res.status(404).json({ error: [{param: "Category is not found", msg: e}]})
+            res.status(404).json({ error: [{param: "Error in retriving list of categogy - ", msg: e}]})
         })
 }
 
@@ -37,6 +37,8 @@ exports.CreateCategory = [
         .escape(), 
     body("description")
         .trim()
+        .isLength({ max: 125 })
+        .withMessage("The description cannot exceed over 125 characters.")
         .escape(), 
     async (req, res) => {
         const { name, description} = req.body; 

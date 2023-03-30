@@ -54,7 +54,6 @@ exports.Login = async (req, res, next) => {
             "role": "member", 
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-        console.log("profile_picture ", result.profile_pic)
 
         return res.status(200).json({
             user: user,

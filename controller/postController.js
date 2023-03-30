@@ -118,3 +118,7 @@ exports.HandleLikeToggle = async (req, res, next) => {
         res.status(500).json({ message: "Internal server error." })
     }
 }
+
+exports.UpdateLikes = async (req, res, next) => {
+    
+}

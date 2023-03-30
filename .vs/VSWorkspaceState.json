@@ -1,7 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\controller",
+    "\\model",
     "\\public",
     "\\public\\uploads",
     "\\route",
@@ -11,5 +11,6 @@
     "\\views\\authentication",
     "\\views\\partials"
   ],
+  "SelectedNode": "\\sampleData\\post.js",
   "PreviewInSolutionExplorer": false
 }

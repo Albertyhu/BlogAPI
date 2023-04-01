@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const User = require('../model/user.js'); 
 const SamplePosts = require('../sampleData/post.js'); 
 const Post = require('../model/post.js'); 
+const SampleComments = require('../sampleData/comments.js'); 
+const Comment = require('../model/comment.js'); 
 
 const PopulateUsers = data => {
     data.forEach( async person => {
@@ -13,8 +15,8 @@ const PopulateUsers = data => {
     })
 }
 
-const PopulatePosts = data => {
-    Post.insertMany(data)
+const PopulatePosts = async data => {
+    await Post.insertMany(data)
         .then(() => {
            console.log("Posts are inserted.")
         })
@@ -23,8 +25,18 @@ const PopulatePosts = data => {
         })
 }
 
-const DeleteAllPost = () => {
-    Post.remove({})
+const PopulateComments = async (data) => {
+    await Comment.insertMany(data)
+        .then(() => {
+            console.log("Comments are inserted.")
+        })
+        .catch((e) => {
+            console.log("Error in uploading comments: ", e)
+        })
+}
+
+const DeleteAllPost = async () => {
+    await Post.deleteMany({})
         .then(() => {
             console.log("All posts are successfully deleted")
         })
@@ -33,7 +45,9 @@ const DeleteAllPost = () => {
 
 exports.populate = (req, res, next) => {
     async.parallel([
-        () => { PopulatePosts(SamplePosts)}
+        //() => { PopulatePosts(SamplePosts) }
+        () => { PopulateComments(SampleComments)}
+        //() => DeleteAllPost(), 
     ],
         function (err, results) {
             if (err) {

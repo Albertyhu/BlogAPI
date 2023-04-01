@@ -235,12 +235,7 @@ exports.ChangePassword = [
 
         try {
             const hashedPassword = await bcrypt.hash(req.body.new_password, 10)
-            const obj = {
-                password: hashedPassword,
-                _id: req.params.id,
-            }
-            const updateUser = new User(obj);
-            await User.findByIdAndUpdate(req.params.id, updateUser)
+            await User.findByIdAndUpdate(req.params.id, { password: hashedPassword }, {new: true})
                 .then(result => {
                     return res.status(200).json({message: "Password has successfully been updated."})
                 })

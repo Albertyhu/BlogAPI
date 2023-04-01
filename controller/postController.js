@@ -1,5 +1,6 @@
 const Post = require('../model/post.js'); 
 const User = require('../model/user.js');
+const Comment = require("../model/comment.js"); 
 const { ObjectId } = require('mongodb');
 
 
@@ -28,13 +29,16 @@ exports.FindOnePost = async (req, res, next) => {
             .populate('author')
             .populate("category")
             .populate("comments")
+            .populate("tag")
+            .populate("likes")
             .exec()
         if (!result) {
-            return res.status(404).json({message: "Post is not found."})
+            return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
         }
-        res.status(200).json(result); 
+        console.log(result)
+        res.status(200).json({ payload: result }); 
     } catch (e) {
-        res.status(500).json({ message: "Internal server error." })
+        console.log("Internal server error - FindOnePost:", e) 
     }
 }
 
@@ -143,14 +147,15 @@ exports.UpdateLikes = async (req, res, next) => {
     if (req.body.updatedLikes) {
         const newUpdate = new Post({
             likes: JSON.parse(req.body.updatedLikes),
-            _id: req.params.id,
         })
-        await Post.findByIdAndUpdate(req.params.id, { newUpdate })
+        console.log("newUpdate: ", newUpdate)
+        await Post.findByIdAndUpdate(req.params.id, { likes: JSON.parse(req.body.updatedLikes) } , {new: true})
             .then(result => {
                 console.log("Update is successful")
+                console.log("result: ", result)
             })
             .catch(e => {
-                console.log(`There is an error in updating likes on ${req.params.id}`)
+                console.log(`There is an error in updating likes on ${req.params.id}`, e)
             })
     } else {
         console.log(`There is a problem with the likes array passed from client`)

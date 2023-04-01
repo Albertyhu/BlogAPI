@@ -14,7 +14,7 @@ const Post = new Schema({
     abstract: { type: String },
     category: [{ type: Schema.Types.ObjectId, ref: "Category" }],
     tag: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
-    comments: [{type: Schema.Types.ObjectId, ref: "Comment"}], 
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comment"}], 
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }], 
 })
 
@@ -22,4 +22,4 @@ Post.virtual("formatted_datePublished").get(function () {
     return this.joinedDate ? DateTime.fromJSDate(this.joinedDate).toLocaleString(DateTime.DATETIME_SHORT) : null;
 })
 
-module.exports = mongoose.model("Post", Post); 
+module.exports = mongoose.model("Post", Post);  

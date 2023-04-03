@@ -55,7 +55,7 @@ exports.CreateCategory = [
         try {
             var categoryImage = null; 
             var obj = {
-                name: name ? he.decode(name.replace(/\s/g, '')) : "", 
+                name: name ? he.decode(name) : "", 
                 description: description.trim() ? he.decode(description.trim()) : "", 
                 dateCreated: Date.now(),
             }
@@ -70,7 +70,7 @@ exports.CreateCategory = [
             await newCategory.save()
                 .then(result => {
                     console.log("The category is successfully created.")
-                    res.status(200).json({message: `The category is successfully created.`})
+                    res.status(200).json({newCategory: result, message: `The category is successfully created.`})
                 })
                 .catch(e => {
                     console.log("Error in creating the category: ", e)
@@ -87,10 +87,11 @@ exports.CreateCategory = [
 exports.EditCategory = []
 
 exports.DeleteCategory = async (req, res, next) => {
-    await Category.deleteONe({ _id: req.params.id })
+    const deletedCategory = req.params.id; 
+    await Category.deleteOne({ _id: req.params.id })
         .then((response) => {
             console.log("Category is successfully deleted")
-            res.status(200).json({ message:`Category ${response.name} has been successfully deleted` })
+            res.status(200).json({ deletedCategory: deletedCategory, message: `Category ${deletedCategory} has been successfully deleted` })
         })
         .catch(e => {
             res.status(404).json({ error: [{ param: "Category is not found", msg: e }] })

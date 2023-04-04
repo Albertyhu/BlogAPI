@@ -7,6 +7,11 @@ const { verifyToken } = require('../middleware/verifyMember.js')
 
 router.get('/', cors(), postController.AllPosts)
 
+router.post("/post", cors(), verifyToken, upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "images", maxCount: 1000}
+]), postController.CreatePost)
+
 router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPostsByCategory);
 
 router.get('/:id', cors(), postController.FindOnePost)

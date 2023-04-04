@@ -44,7 +44,7 @@ exports.CreateCategory = [
         const { name, description} = req.body; 
         var errors = validationResult(req); 
 
-        var duplicateError = await findDuplicateCategory(name); 
+        var duplicateError = await findDuplicateCategory(name, null); 
         if (duplicateError != null) {
             errors.errors.push(duplicateError)
         }
@@ -84,7 +84,59 @@ exports.CreateCategory = [
     }
 ]
 
-exports.EditCategory = []
+exports.EditCategory = [
+    body("name")
+        .trim() 
+        .isLength({ min: 1 })
+        .withMessage("The name of the category cannot be empty.")
+        .escape(), 
+    body("description")
+        .trim()
+        .isLength({ max: 125 })
+        .withMessage("The description cannot exceed over 125 characters.")
+        .escape(),
+    async (req, res) => {
+        const { name, description } = req.body;
+        var errors = validationResult(req);
+
+        var duplicateError = await findDuplicateCategory(name, req.params.id);
+        if (duplicateError != null) {
+            errors.errors.push(duplicateError)
+        }
+        console.log("errors: ", errors)
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: errors.array() })
+        }
+        try {
+            var categoryImage = null;
+            var obj = {
+                name: name ? he.decode(name) : "",
+                description: description.trim() ? he.decode(description.trim()) : "",
+                dateCreated: Date.now(),
+            }
+            if (req.file) {
+                categoryImage = {
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+                    contentType: req.file.mimetype,
+                }
+                obj.image = categoryImage;
+            }
+            await Category.findByIdAndUpdate(req.params.id, obj, {new: true})
+                .then(result => {
+                    console.log(`The category ${name} is successfully updated.`)
+                    res.status(200).json({ updatedCategory: result, message: `The category is successfully created.` })
+                })
+                .catch(e => {
+                    console.log("Error in updating the category: ", e)
+                    res.status(500).json({ error: [{ param: "server", msg: `There was an error in updating the category. ${e}` }] })
+                })
+
+        } catch (e) {
+            console.log("Error in updating the category: ", e)
+            res.status(500).json({ error: [{ param: "server", msg: `There was an error in updating the category. ${e}` }] })
+        }
+    }
+]
 
 exports.DeleteCategory = async (req, res, next) => {
     const deletedCategory = req.params.id; 

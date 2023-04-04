@@ -41,9 +41,9 @@ const dataHooks = () => {
             })
         return Errors; 
     }
-    const findDuplicateCategory = async (name) => {
+    const findDuplicateCategory = async (name, ID) => {
         const result = await Category.find({})
-        if (result.find(val => val.name == name)) {
+        if (result.find(val => val.name == name && val._id.toString() != ID.toString())) {
             return { param: "name", msg: "This category already exists." }
         }
         else { 

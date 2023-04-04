@@ -2,6 +2,7 @@ const Post = require('../model/post.js');
 const User = require('../model/user.js');
 const Comment = require("../model/comment.js"); 
 const { ObjectId } = require('mongodb');
+const { body, validationResult } = require('express-validator') 
 
 
 exports.AllPosts = async (req, res, next) => {
@@ -161,3 +162,60 @@ exports.UpdateLikes = async (req, res, next) => {
         console.log(`There is a problem with the likes array passed from client`)
     }
 }
+
+
+exports.CreatePost = [
+    body("title")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("The title field must not be empty")
+        .escape(),
+    body("content")
+        .trim()
+        .escape(),
+    body("abstract")
+        .escape(),
+    body("published"),
+    body("author"),
+    body("category")
+        .custom((val) => {
+
+        }),
+    body("tag"),
+    async (req, res) => {
+        var errors = validationResult(req);
+        //create a way to check if the post is posted under an existing category
+
+        errors.errors = errors.errors.concat(DuplicateErrors);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: errors.array() });
+        }
+
+        var thumbnail = null; 
+        var images = null; 
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: errors.array() });
+        }
+        if (req.files.thumnail) {
+            thumbnail = {
+                data:  req.files.thumbnail[0].buffer,
+                contentType: req.files.thumbnail[0].mimetype,
+            }
+        }
+        if (req.files.images) {
+            images = req.files.images.map(file => {
+                return {
+                    data: file.buffer,
+                    contentType: file.memetype
+                }
+            })
+        }
+        try {
+
+        } catch (e) {
+            console.log("Error in trying to create new user: ", e.message)
+            return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })
+        }
+    }
+    
+]

@@ -8,6 +8,7 @@ const Post = new Schema({
     content: { type: String },
     published: {type: Boolean}, 
     datePublished: { type: Date },
+    lastEdited: { type: Date },
     author: { type: Schema.Types.ObjectId, ref: "User" },
     thumbnail: { data: Buffer, contentType: String },
     images: [{ data: Buffer, contentType: String }],
@@ -22,4 +23,4 @@ Post.virtual("formatted_datePublished").get(function () {
     return this.joinedDate ? DateTime.fromJSDate(this.joinedDate).toLocaleString(DateTime.DATETIME_SHORT) : null;
 })
 
-module.exports = mongoose.model("Post", Post);  
+module.exports = mongoose.model("Post", Post);   

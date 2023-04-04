@@ -13,7 +13,7 @@ router.post("/create", cors(), verifyToken, upload.single("image"), categoryCont
 
 router.get("/:id", cors(), categoryController.FindOneCategory)
 
-router.post("/:id/edit", cors(), verifyToken, upload.single("image"), categoryController.EditCategory);
+router.put("/:id/edit", cors(), verifyToken, upload.single("image"), categoryController.EditCategory);
 
 router.delete("/:id/delete", cors(), verifyToken, categoryController.DeleteCategory); 
 

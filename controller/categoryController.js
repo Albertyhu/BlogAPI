@@ -113,6 +113,7 @@ exports.EditCategory = [
                 name: name ? he.decode(name) : "",
                 description: description.trim() ? he.decode(description.trim()) : "",
                 dateCreated: Date.now(),
+                _id: req.params.id,
             }
             if (req.file) {
                 categoryImage = {

@@ -1,7 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\controller",
+    "\\middleware",
     "\\model",
     "\\public",
     "\\public\\uploads",
@@ -11,6 +11,6 @@
     "\\views",
     "\\views\\authentication"
   ],
-  "SelectedNode": "\\sampleData\\categories.js",
+  "SelectedNode": "\\model\\post.js",
   "PreviewInSolutionExplorer": false
 }

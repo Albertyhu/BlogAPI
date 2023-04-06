@@ -2,9 +2,8 @@ const Post = require('../model/post.js');
 const User = require('../model/user.js');
 const Comment = require("../model/comment.js"); 
 const { ObjectId } = require('mongodb');
-const { body, validationResult } = require('express-validator') 
-
-
+const { body, validationResult } = require('express-validator')
+const { CheckLength } = require('../util/tinyMCEHooks.js'); 
 exports.AllPosts = async (req, res, next) => {
     try {
         var result = await AllPosts.find({})
@@ -163,7 +162,6 @@ exports.UpdateLikes = async (req, res, next) => {
     }
 }
 
-
 exports.CreatePost = [
     body("title")
         .trim()
@@ -182,17 +180,34 @@ exports.CreatePost = [
 
         }),
     body("tag"),
+    body("abstract_char_limit"),
     async (req, res) => {
         var errors = validationResult(req);
         //create a way to check if the post is posted under an existing category
 
         errors.errors = errors.errors.concat(DuplicateErrors);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ error: errors.array() });
-        }
+
+        const {
+            title,
+            category,
+            published,
+            abstract,
+            abstract_char_limit
+
+        } = req.body; 
 
         var thumbnail = null; 
         var images = null; 
+
+        //may cause logical errors 
+        if (checkLength(abstract) > abstract_char_limit) {
+            var lengthError = {
+                param: "abstract",
+                msg: `Your abstract cannot be longer than ${abstract_char_limit} characters.`
+            }
+            errors.errors = [...errors.error, lengthError]; 
+        }
+
         if (!errors.isEmpty()) {
             return res.status(400).json({ error: errors.array() });
         }
@@ -219,3 +234,5 @@ exports.CreatePost = [
     }
     
 ]
+
+exports.EditPost=[]

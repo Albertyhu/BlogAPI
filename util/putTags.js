@@ -1,24 +1,5 @@
 const Tag = require('../model/tags');
 
-//const putTagsFromPost = async (tags, postID) => {
-//    const newTags = [];
-//    const updateTags = [];
-//    try {
-//        const result = await Tag.find({})
-//        const updateTags = result.filter(val => tags.some(obj => obj.name.trim() == val.name.trim()))
-//        const newTags = result.filter(val => !tags.some(obj => obj.name.trim() == val.name.trim()))
-//        if (newTags != null && newTags.length > 0) {
-//            createNewTagsFromPost(newTags, postID);
-//            updateTagsFromPost()
-//        }
-//        if (updateTags != null && updateTags.length > 0) {
-
-//        }
-//    } catch (e) {
-//    }
-
-//}
-
 const putTagsFromPost = async (tags, postID) => {
     try {
         const operations = tags.map(item => {

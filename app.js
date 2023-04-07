@@ -52,11 +52,11 @@ app.use((req, res, next) => {
 });
    
 //the body parse lines should always be defined before routes 
-const mainRoute = require('./route/api.js');
+const mainRoute = require('./route/api.js'); 
 const postRoute = require('./route/postAPI.js');
 const authRoute = require('./route/authAPI.js'); 
 const categoryRoute = require("./route/categoryAPI.js"); 
-const tagRoute = require("./route/tagAPI.js"); 
+const tagRoute = require("./route/tagAPI.js");  
  
 app.use('/', mainRoute);
 app.use('/post', postRoute);

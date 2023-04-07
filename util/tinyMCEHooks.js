@@ -1,4 +1,4 @@
-exports.ConvertToPlainText = content => {
+const ConvertToPlainText = content => {
     try {
         const regex = /(<([^>]+)>)/gi;
         const plainText = content.replace(regex, "");

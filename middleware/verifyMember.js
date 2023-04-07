@@ -26,10 +26,14 @@ exports.verifyToken = (req, res, next) => {
     if (typeof bearerHeader != 'undefined') {
         const bearer = bearerHeader.split(" ")
         const bearerToken = bearer[1]; 
-        req.token = bearerToken; 
+        req.token = bearerToken;  
         next()
     } else {
         console.log("User is not authorized")
-        res.status(403).json({ error: [{ param: "authorization", msg: "User is forbidden" }] })
+        const error = new Error("User is not authorized");
+        error.statusCode = 403;
+        error.data = [{ param: "authorization", msg: "User is forbidden" }];
+        next(error)
+       // return res.status(403).json({ error: [{ param: "authorization", msg: "User is forbidden" }] })
     }
 } 

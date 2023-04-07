@@ -13,7 +13,7 @@ const Post = new Schema({
     thumbnail: { data: Buffer, contentType: String },
     images: [{ data: Buffer, contentType: String }],
     abstract: { type: String },
-    category: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+    category: { type: Schema.Types.ObjectId, ref: "Category" },
     tag: [{ type: Schema.Types.ObjectId, ref: "Tag" }],
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment"}], 
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }], 

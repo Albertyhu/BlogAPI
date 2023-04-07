@@ -2,10 +2,12 @@ const SampleUsers = require('../sampleData/sampleUsers.js');
 const async = require('async'); 
 const mongoose = require('mongoose');
 const User = require('../model/user.js'); 
-const SamplePosts = require('../sampleData/post.js'); 
+const SamplePosts = require('../sampleData/post2.js'); 
 const Post = require('../model/post.js'); 
 const SampleComments = require('../sampleData/comments.js'); 
 const Comment = require('../model/comment.js'); 
+const Category = require('../model/category.js'); 
+const { pickCategoryId } = require('../util/randGen.js')
 
 const PopulateUsers = data => {
     data.forEach( async person => {
@@ -16,7 +18,12 @@ const PopulateUsers = data => {
 }
 
 const PopulatePosts = async data => {
-    await Post.insertMany(data)
+    var copy = data; 
+    const categoryList = await Category.find({})
+    copy.forEach(val => {
+        val.category = pickCategoryId(categoryList);
+    })
+    await Post.insertMany(copy)
         .then(() => {
            console.log("Posts are inserted.")
         })
@@ -45,8 +52,8 @@ const DeleteAllPost = async () => {
 
 exports.populate = (req, res, next) => {
     async.parallel([
-        //() => { PopulatePosts(SamplePosts) }
-        () => { PopulateComments(SampleComments)}
+        () => { PopulatePosts(SamplePosts) }
+        //() => { PopulateComments(SampleComments)}
         //() => DeleteAllPost(), 
     ],
         function (err, results) {

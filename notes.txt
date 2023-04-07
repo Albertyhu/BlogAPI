@@ -1,3 +1,7 @@
+4/6/23
+What I learnt:
+If you are trying to pass an array from a client to server, it needs to be stringified first in the client side, then parsed in the server side.
+
 3/16/23
 What I learnt today:
 bodyParser or any other parsers should always be defined before routes are defined

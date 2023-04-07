@@ -6,7 +6,7 @@ const Category = new Schema({
     name: {type: String, required: true}, 
     image: { data: Buffer, contentType: String },
     description: { type: String },
-    post: [[{ type: Schema.Types.ObjectId, ref: "Post" }]], 
+    post: [{ type: Schema.Types.ObjectId, ref: "Post" }], 
     dateCreated: { type: Date }, 
 })
 

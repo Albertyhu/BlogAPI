@@ -4,6 +4,8 @@ const Comment = require("../model/comment.js");
 const { ObjectId } = require('mongodb');
 const { body, validationResult } = require('express-validator')
 const { CheckLength } = require('../util/tinyMCEHooks.js'); 
+const he = require('he'); 
+
 exports.AllPosts = async (req, res, next) => {
     try {
         var result = await AllPosts.find({})
@@ -27,7 +29,6 @@ exports.FindOnePost = async (req, res, next) => {
         const PostId = req.params.id; 
         const result = await Post.findById(PostId)
             .populate('author')
-            .populate("category")
             .populate("comments")
             .populate("tag")
             .populate("likes")
@@ -77,7 +78,8 @@ exports.GetOnePostByAuthor = async (req, res, next) => {
 
 exports.GetPostsByCategory = async (req, res, next) => {
     try {
-        await Post.find({ category: { $elemMatch: { $eq: new ObjectId(req.params.categoryID) } } })
+     //   await Post.find({ category: { $elemMatch: { $eq: new ObjectId(req.params.categoryID) } } })
+        await Post.find({ category: req.params.categoryID })
             .populate("author")
             .populate("tag")
             .then(result => {
@@ -95,16 +97,16 @@ exports.GetPostsByCategory = async (req, res, next) => {
 exports.DeletePostById = async (req, res, next) => {
     const PostId = req.params.id;
     try {
-        await findByIdAndDelete(PostId, (err, docs) => {
-            if (err) {
-                return res.status(400).json({ message: `Error: ${err}` })
-            }
-            else {
+        await Post.deleteOne({ _id: PostId })
+            .then(result => {
+                console.log("The post has been deleted.")
                 return res.status(200).json({ message: "Post has been deleted." })
-            }
-        })
+            })
+            .catch(e => {
+                return res.status(400).json({ error: [{ param: "general", msg: `Internal server error: ${e}`}] })
+            })
     } catch (e) {
-        res.status(500).json({ message: "Internal server error." })
+        res.status(500).json({ error: [{param: "server", msg: `Internal server error: ${e}`}]})
     }
 
 
@@ -175,58 +177,79 @@ exports.CreatePost = [
         .escape(),
     body("published"),
     body("author"),
-    body("category")
-        .custom((val) => {
-
-        }),
+    body("category"),
     body("tag"),
     body("abstract_char_limit"),
     async (req, res) => {
+        if (req.error) {
+            return res.status(req.error.statusCode).json({error: req.error.data})
+        }
+
         var errors = validationResult(req);
-        //create a way to check if the post is posted under an existing category
 
-        errors.errors = errors.errors.concat(DuplicateErrors);
-
-        const {
-            title,
+        const { 
+            title, 
             category,
             published,
             abstract,
-            abstract_char_limit
-
+            abstract_char_limit,
+            tag,
+            author,
         } = req.body; 
 
         var thumbnail = null; 
         var images = null; 
 
         //may cause logical errors 
-        if (checkLength(abstract) > abstract_char_limit) {
+        if (CheckLength(abstract) > abstract_char_limit) {
             var lengthError = {
                 param: "abstract",
                 msg: `Your abstract cannot be longer than ${abstract_char_limit} characters.`
             }
-            errors.errors = [...errors.error, lengthError]; 
+            errors.errors = [...errors.errors, lengthError]; 
         }
 
         if (!errors.isEmpty()) {
             return res.status(400).json({ error: errors.array() });
         }
-        if (req.files.thumnail) {
+
+
+        var obj = {
+            title: he.decode(title),
+            category,
+            published,
+            abstract: he.decode(abstract),
+            author,
+            datePublished: new Date.now(),
+            tag: JSON.parse(tag),
+        }
+        if (typeof req.files != 'undefined' && req.files.thumbnail != null) {
             thumbnail = {
                 data:  req.files.thumbnail[0].buffer,
                 contentType: req.files.thumbnail[0].mimetype,
             }
+            obj.thumbnail = thumbnail; 
         }
-        if (req.files.images) {
+        if (typeof req.files != 'undefined' && req.files.images != null) {
             images = req.files.images.map(file => {
                 return {
                     data: file.buffer,
                     contentType: file.memetype
                 }
             })
+            obj.images = images; 
         }
         try {
-
+            const newPost = new Post(obj)
+            await newPost.save()
+                .then(result => {
+                    console.log("The post has successfully been created: ", result)
+                    res.status(200).json({message: "The post has successfully been saved.", post: result})
+                })
+                .catch(e => {
+                    console.log("Error in trying to create a new post 252: ", e)
+                    res.status(500).json({ error: [{param: "server", msg:"Something went wrong when trying to create a post."}]})
+                })
         } catch (e) {
             console.log("Error in trying to create new user: ", e.message)
             return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })

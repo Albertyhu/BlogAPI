@@ -12,6 +12,8 @@ router.get("/get_single_tag", cors(),  tagController.GetOneTag);
 
 router.post("/create", cors(), verifyToken, upload.none(), tagController.CreateManyTags);
 
+router.post("/create2", cors(), verifyToken, upload.none(), tagController.CreateManyTagsWithoutDuplicates);
+
 router.delete("/delete_tags", cors(), verifyToken, tagController.DeleteTags); 
 
 module.exports = router;   

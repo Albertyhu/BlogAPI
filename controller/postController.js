@@ -5,6 +5,11 @@ const { ObjectId } = require('mongodb');
 const { body, validationResult } = require('express-validator')
 const { CheckLength } = require('../util/tinyMCEHooks.js'); 
 const he = require('he'); 
+const { retrieveTagId } = require('./tagController.js'); 
+const Tag = require("../model/tag.js"); 
+const { genKey } = require('../util/randGen.js');
+const TagController = require('./tagController.js'); 
+const async = require('async');
 
 exports.AllPosts = async (req, res, next) => {
     try {
@@ -213,14 +218,13 @@ exports.CreatePost = [
             return res.status(400).json({ error: errors.array() });
         }
 
-
         var obj = {
             title: he.decode(title),
             category,
             published,
             abstract: he.decode(abstract),
             author,
-            datePublished: new Date.now(),
+            datePublished: Date.now(),
             tag: JSON.parse(tag),
         }
         if (typeof req.files != 'undefined' && req.files.thumbnail != null) {
@@ -251,11 +255,139 @@ exports.CreatePost = [
                     res.status(500).json({ error: [{param: "server", msg:"Something went wrong when trying to create a post."}]})
                 })
         } catch (e) {
-            console.log("Error in trying to create new user: ", e.message)
+            console.log("Error in trying to create new post: ", e.message)
             return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })
         }
     }
     
 ]
+
+exports.CreatePostAndUpdateTags = [
+    body("title")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("The title field must not be empty")
+        .escape(),
+    body("content")
+        .trim()
+        .escape(),
+    body("abstract")
+        .escape(),
+    body("published"),
+    body("author"),
+    body("category"),
+    body("tag"),
+    body("abstract_char_limit"),
+    async (req, res, next) => {
+        if (req.error) {
+            return res.status(req.error.statusCode).json({ error: req.error.data })
+        }
+
+        var errors = validationResult(req);
+
+        const {
+            title,
+            category,
+            published,
+            abstract,
+            abstract_char_limit,
+            tag,
+            author,
+        } = req.body;
+
+        var thumbnail = null;
+        var images = null;
+
+        //may cause logical errors 
+        if (CheckLength(abstract) > abstract_char_limit) {
+            var lengthError = {
+                param: "abstract",
+                msg: `Your abstract cannot be longer than ${abstract_char_limit} characters.`
+            }
+            errors.errors = [...errors.errors, lengthError];
+        }
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ error: errors.array() });
+        }
+
+        var obj = {
+            title: he.decode(title),
+            category,
+            published,
+            abstract: he.decode(abstract),
+            author,
+            datePublished: Date.now(),
+        }
+        if (typeof req.files != 'undefined' && req.files.thumbnail != null) {
+            thumbnail = {
+                data: req.files.thumbnail[0].buffer,
+                contentType: req.files.thumbnail[0].mimetype,
+            }
+            obj.thumbnail = thumbnail;
+        }
+        if (typeof req.files != 'undefined' && req.files.images != null) {
+            images = req.files.images.map(file => {
+                return {
+                    data: file.buffer,
+                    contentType: file.mimetype
+                }
+            })
+            obj.images = images;
+        }
+        try {
+            const tagArray = JSON.parse(tag)
+            async.waterfall([
+                function (callback) {
+                    const newPost = new Post(obj)
+                    newPost.save()
+                        .then(post => {
+                            console.log("The post has successfully been created: ", post)
+                          //  res.status(200).json({ message: "The post has successfully been saved.", post: result })
+                            return callback(null, post)
+                        })
+                        .catch(e => {
+                            console.log("Error in trying to create a new post 252: ", e)
+                            callback({
+                                param: "server",
+                                msg: "Something went wrong when trying to create a post.",
+                            });              
+                        })
+                }, 
+                async function (post, callback) {
+                    console.log("2nd function post: ", post)
+                    const tags = await TagController.saveTagsFromNewPost(tagArray, post)
+                    console.log("2nd function tags: ", tags)
+                    return callback(null, post, tags)
+                },
+                function (post, tags, callback) {
+                    console.log("3rd function post: ", post)
+                    console.log("tags: ", tags)
+                    const tagIDList = tags.map(item => item._id); 
+                    const newUpdate = {
+                        tag: tagIDList,
+                        _id: post._id, 
+                    } 
+                    Post.findByIdAndUpdate(post._id, newUpdate, { new: true })
+                        .then(updatedPost => {
+                            return callback(null, post, tags, updatedPost)
+                        })
+                        .catch(err => {
+                            return callback(err)
+                        })
+                }
+            ], (err, post, tags, updatedPost) => {
+                console.log("Tags are successfully saved on post")
+                res.status(200).json({ post: updatedPost, message: "Post is successfully created." })
+            })
+
+        } catch (e) {
+            console.log("Error in trying to create new post: ", e.message)
+            return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })
+        }
+    }
+
+]
+
 
 exports.EditPost=[]

@@ -12,7 +12,7 @@ router.get('/', cors(), postController.AllPosts)
 //    { name: "images", maxCount: 1000}
 //]), postController.CreatePost)
 
-router.post("/create", cors(), verifyToken, upload.none(), postController.CreatePost)
+router.post("/create", cors(), verifyToken, upload.none(), postController.CreatePostAndUpdateTags)
 
 router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPostsByCategory);
 

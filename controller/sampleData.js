@@ -49,12 +49,23 @@ const DeleteAllPost = async () => {
         })
 }
 
+const DeletePostsByTitle = async (title) => {
+    await Post.deleteMany({ title: title })
+        .then(() => {
+            console.log(`All posts with the titile ${title} are deleted`); 
+        })
+        .catch(e => {
+            console.log("DeletePostsByTitle error: ", e)
+        })
+}
+
 
 exports.populate = (req, res, next) => {
     async.parallel([
-        () => { PopulatePosts(SamplePosts) }
+        //() => { PopulatePosts(SamplePosts) }
         //() => { PopulateComments(SampleComments)}
         //() => DeleteAllPost(), 
+        () => { DeletePostsByTitle("I love dogs!")}
     ],
         function (err, results) {
             if (err) {

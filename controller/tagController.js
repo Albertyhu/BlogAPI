@@ -159,15 +159,16 @@ exports.saveTagsFromNewPost = async (tagList, post) => {
             }
         })
         const result = await Tag.bulkWrite(operations)
-                console.log("The following tags are successfully updated: ", result)
-                const savedTagArray = []; 
-                const upsertedIds = result.upsertedIds
-                for (var i in upsertedIds) {
-                    savedTagArray.push(upsertedIds[i])
-                }
+        console.log("The following tags are successfully updated: ", result)
+        const savedTagArray = [];
+        const upsertedIds = result.upsertedIds
+        for (var i in upsertedIds) {
+            savedTagArray.push(upsertedIds[i])
+        }
 
-                console.log("savedTagArray: ", savedTagArray)
-                return savedTagArray; 
+        console.log("savedTagArray: ", savedTagArray)
+        return savedTagArray;
+
     } catch (e) {
         console.log("There is an error with saveTagsFromNewPost: ", e)
     }

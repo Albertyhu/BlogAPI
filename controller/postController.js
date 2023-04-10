@@ -41,7 +41,6 @@ exports.FindOnePost = async (req, res, next) => {
         if (!result) {
             return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
         }
-        console.log(result)
         res.status(200).json({ payload: result }); 
     } catch (e) {
         console.log("Internal server error - FindOnePost:", e) 
@@ -98,7 +97,7 @@ exports.GetPostsByCategory = async (req, res, next) => {
         res.status(500).json({ error: [{ param: "server", msg: `Internal server error.` }] })
     }
 }
-
+ 
 exports.DeletePostById = async (req, res, next) => {
     const PostId = req.params.id;
     try {
@@ -259,7 +258,6 @@ exports.CreatePost = [
             return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })
         }
     }
-    
 ]
 
 exports.CreatePostAndUpdateTags = [
@@ -342,8 +340,6 @@ exports.CreatePostAndUpdateTags = [
                     const newPost = new Post(obj)
                     newPost.save()
                         .then(post => {
-                            console.log("The post has successfully been created: ", post)
-                          //  res.status(200).json({ message: "The post has successfully been saved.", post: result })
                             return callback(null, post)
                         })
                         .catch(e => {
@@ -354,15 +350,21 @@ exports.CreatePostAndUpdateTags = [
                             });              
                         })
                 }, 
-                async function (post, callback) {
-                    console.log("2nd function post: ", post)
-                    const tags = await TagController.saveTagsFromNewPost(tagArray, post)
-                    console.log("2nd function tags: ", tags)
-                    return callback(null, post, tags)
+                function (post, callback) {
+                    try {
+                        TagController.saveTagsFromNewPost(tagArray, post)
+                            .then(tags => {
+                                return callback(null, post, tags)
+                            })
+                            .catch(error => {
+                                return callback(error)
+                            })
+                    }
+                    catch (e) {
+                        return callback(e)
+                    }
                 },
                 function (post, tags, callback) {
-                    console.log("3rd function post: ", post)
-                    console.log("tags: ", tags)
                     const tagIDList = tags.map(item => item._id); 
                     const newUpdate = {
                         tag: tagIDList,
@@ -370,6 +372,7 @@ exports.CreatePostAndUpdateTags = [
                     } 
                     Post.findByIdAndUpdate(post._id, newUpdate, { new: true })
                         .then(updatedPost => {
+                            console.log("Tags are successfully saved on post")
                             return callback(null, post, tags, updatedPost)
                         })
                         .catch(err => {
@@ -377,7 +380,7 @@ exports.CreatePostAndUpdateTags = [
                         })
                 }
             ], (err, post, tags, updatedPost) => {
-                console.log("Tags are successfully saved on post")
+                console.log("updatedPost: ", updatedPost)
                 res.status(200).json({ post: updatedPost, message: "Post is successfully created." })
             })
 
@@ -386,7 +389,6 @@ exports.CreatePostAndUpdateTags = [
             return res.status(404).json({ error: [{ param: "server", msg: `${e}` }] })
         }
     }
-
 ]
 
 

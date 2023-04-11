@@ -17,4 +17,6 @@ router.put("/:id/edit", cors(), verifyToken, upload.single("image"), categoryCon
 
 router.delete("/:id/delete", cors(), verifyToken, categoryController.DeleteCategory); 
 
+router.get("/:name", cors(), categoryController.GetOneCategoryByName)
+
 module.exports = router;  

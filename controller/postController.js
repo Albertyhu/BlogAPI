@@ -82,7 +82,7 @@ exports.GetOnePostByAuthor = async (req, res, next) => {
 
 exports.GetPostsByCategory = async (req, res, next) => {
     try {
-     //   await Post.find({ category: { $elemMatch: { $eq: new ObjectId(req.params.categoryID) } } })
+        console.log("category ID: ", req.params.categoryID)
         await Post.find({ category: req.params.categoryID })
             .populate("author")
             .populate("tag")
@@ -97,23 +97,45 @@ exports.GetPostsByCategory = async (req, res, next) => {
         res.status(500).json({ error: [{ param: "server", msg: `Internal server error.` }] })
     }
 }
- 
+
 exports.DeletePostById = async (req, res, next) => {
     const PostId = req.params.id;
     try {
-        await Post.deleteOne({ _id: PostId })
-            .then(result => {
-                console.log("The post has been deleted.")
-                return res.status(200).json({ message: "Post has been deleted." })
-            })
-            .catch(e => {
-                return res.status(400).json({ error: [{ param: "general", msg: `Internal server error: ${e}`}] })
-            })
+        async.parallel([
+            function(callback){
+               return Post.deleteOne({ _id: PostId })
+                   .then(post => {
+                       console.log("The post has been deleted.")
+                       return callback(null, post)
+                    })
+                   .catch(e => {
+                       console.log("DeletePostById Error in 1st function: ", e)
+                       return callback(e)
+                   })
+            }, 
+            function (callback) {
+                TagController.RemovePostFromTags(PostId)
+                    .then(result => {
+                        console.log("After removing post from tags: ", result)
+                        return callback(null)
+                    })
+                    .catch(e => {
+                        console.log("DeletePostById Error in 2nd function: ", e)
+                        return callback(e)
+                    })
+            },
+        ], (error, post) => {
+            if (error) {
+                console.log('Callback error: ', error)
+                return res.status(500).json({ error: [{param: "server", msg: "Someone went wrong in the server"}]})
+            }
+            console.log("result: ", post)
+            console.log(`The post has been deleted`)
+            return res.status(200).json({message: "The post has been deleted."})
+        })
     } catch (e) {
-        res.status(500).json({ error: [{param: "server", msg: `Internal server error: ${e}`}]})
+        res.status(500).json({ error: [{ param: "server", msg: `Internal server error: ${e}` }] })
     }
-
-
 }
 
 exports.HandleLikeToggle = async (req, res, next) => {
@@ -288,6 +310,7 @@ exports.CreatePostAndUpdateTags = [
             category,
             published,
             abstract,
+            content, 
             abstract_char_limit,
             tag,
             author,
@@ -314,6 +337,7 @@ exports.CreatePostAndUpdateTags = [
             category,
             published,
             abstract: he.decode(abstract),
+            content: he.decode(content), 
             author,
             datePublished: Date.now(),
         }
@@ -365,7 +389,7 @@ exports.CreatePostAndUpdateTags = [
                     }
                 },
                 function (post, tags, callback) {
-                    const tagIDList = tags.map(item => item._id); 
+                    const tagIDList = tags.map(item => item.toString()); 
                     const newUpdate = {
                         tag: tagIDList,
                         _id: post._id, 

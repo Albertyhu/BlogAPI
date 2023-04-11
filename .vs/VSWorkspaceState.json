@@ -1,7 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\middleware",
+    "\\controller",
     "\\public",
     "\\public\\uploads",
     "\\route",
@@ -11,6 +11,6 @@
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\sampleData\\sampleUsers.js",
+  "SelectedNode": "\\util\\dataHooks.js",
   "PreviewInSolutionExplorer": false
 }

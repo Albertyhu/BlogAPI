@@ -64,12 +64,23 @@ const dataHooks = () => {
         }
     }
 
+    const RetrieveTagIDs = (tagList) => {
+        var arr = []; 
+        tagList.forEach(item => {
+            if (typeof item._id != 'undefined' && item._id != null) {
+                arr.push(item._id);
+            }
+        })
+        return arr;
+    }
+
     return {
         BufferImage,
         TestFunction,
         findDuplicateNameAndEmail,
         findDuplicateCategory,
-        checkIfArrayHasEmptyValues 
+        checkIfArrayHasEmptyValues,
+        RetrieveTagIDs
     }
 }
 

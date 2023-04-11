@@ -4,8 +4,10 @@ const he = require("he")
 const dataHooks = require('../util/dataHooks.js'); 
 const { ObjectId } = require('mongodb');
 const { genKey } = require('../util/randGen.js'); 
-
-const { checkIfArrayHasEmptyValues } = dataHooks(); 
+const {
+    checkIfArrayHasEmptyValues,
+    RetrieveTagIDs,
+} = dataHooks(); 
 
 exports.GetAllTags = async (req, res, next) => {
     await Tag.find({})
@@ -145,7 +147,11 @@ const retrieveTagId = async (tagList, postID) => {
 
 //Preliminaries: Argument for tagList is already parsed 
 exports.saveTagsFromNewPost = async (tagList, post) => {
+    console.log("saveTagsFromNewPost: ", tagList)
     try {
+        //The following code does result to adding the post ObjectId to 
+        const IdOfExisting = RetrieveTagIDs(tagList);
+
         const operations = tagList.map(opt =>
         {
             return {
@@ -158,15 +164,15 @@ exports.saveTagsFromNewPost = async (tagList, post) => {
                 }
             }
         })
+
         const result = await Tag.bulkWrite(operations)
-        console.log("The following tags are successfully updated: ", result)
-        const savedTagArray = [];
+        var savedTagArray = [];
         const upsertedIds = result.upsertedIds
         for (var i in upsertedIds) {
             savedTagArray.push(upsertedIds[i])
         }
 
-        console.log("savedTagArray: ", savedTagArray)
+        savedTagArray = savedTagArray.concat(IdOfExisting)
         return savedTagArray;
 
     } catch (e) {
@@ -192,3 +198,25 @@ exports.DeleteTags = [
         }
     }
 ]
+
+
+//This function is written to complement DeletePostById function in postController.js
+//When a post document is deleted, its objectId must be deleted from all tag documents as well. 
+exports.RemovePostFromTags = (postID) => {
+    try {
+        //The return keyword is necessary because it returns a promise that DeletePostById async parallel is expecting
+        return Tag.updateMany({},
+            { $pull: { post: postID } })
+            .then(result => {
+                console.log(`${postID} has been removed from tags`)
+                return result;
+            })
+            .catch(e => {
+                console.log("RemovePostFromTags  Error: ", e)
+                return e; 
+            })
+    }
+    catch (e) {
+        console.log("RemovePostFromTags  Error: ", e)
+    }
+}

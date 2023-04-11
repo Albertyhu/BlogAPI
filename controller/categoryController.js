@@ -45,7 +45,7 @@ exports.CreateCategory = [
         var errors = validationResult(req); 
 
         var duplicateError = await findDuplicateCategory(name, null); 
-        if (duplicateError != null) {
+        if (duplicateError != null) { 
             errors.errors.push(duplicateError)
         }
         console.log("errors: ", errors)
@@ -83,6 +83,16 @@ exports.CreateCategory = [
         }
     }
 ]
+
+exports.GetOneCategoryByName = (req, res, next) => {
+    Category.findOne({ name: req.params.name })
+        .then(result => {
+            return res.status(200).json({ category: result})
+        })
+        .catch(e => {
+            res.status(404).json({ error: [{ param: "Category is not found", msg: e }] })
+        })
+}
 
 exports.EditCategory = [
     body("name")

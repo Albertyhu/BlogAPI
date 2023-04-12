@@ -9,6 +9,7 @@ const passport = require('passport');
 const createError = require("http-errors"); 
 const handleError = require('./middleware/handleError.js')
 const bodyParserErrorHandler = require('express-body-parser-error-handler')
+const { upload } = require('./middleware/multerSetup.js');
 //const initialize = require("./passport.config.js");
 
 //initialize(passport);
@@ -48,9 +49,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
-    handleError(express.json(), req, res, next);
+    handleError(express.json(), req, res, next); 
 });
-   
+ 
+//app.use(upload.any());
+
 //the body parse lines should always be defined before routes 
 const mainRoute = require('./route/api.js'); 
 const postRoute = require('./route/postAPI.js');

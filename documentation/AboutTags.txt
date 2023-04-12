@@ -1,0 +1,11 @@
+HOW THE TAGS WORK: 
+
+In a Post document, the tag field is an array of ObjectId's of Tag documents. 
+When the client updates tags for a post, it will send two array of tags. 
+The arrays are stringified in the client and then parsed in the server.
+One array will be an old list of tags. 
+The other array will be an updated list of tags. 
+They are used to determine which tags are deleted, which tags are added which tags are to be kept. 
+The deleted and kept tags will have the fields post, ObjectId's, and names.
+The new tags will only have the field names and will rely on the server to create new objectId's for them. 
+That is handled in the Tag Controller function savePostIDToTags.

@@ -7,18 +7,20 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const ext = path.extname(file.originalname);
-        const filename = `${Date.now()}-${file.filename}${ext}`;
+        const filename = `${Date.now()}-${file.filename}${Math.floor(Math.round(Math.random() * 10))}${ext}`;
         cb(null, filename)
     },
 }); 
 
-exports.upload = multer({
-    limits: { fileSize: 1024 * 1024 * 5 },
-    storage: storage,
-    fileFilter: function (req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-            return cb(new Error('Only image files are allowed!'));
-        }
-        cb(null, true);
+const faceFilter = (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+        return cb(new Error('Only image files are allowed!'));
     }
+    cb(null, true);
+}
+
+exports.upload = multer({
+    limits: { fileSize: 1024 * 1024 * 10 },
+    storage: storage,
+    fileFilter: faceFilter, 
 }); 

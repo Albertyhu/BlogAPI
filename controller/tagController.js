@@ -4,6 +4,7 @@ const he = require("he")
 const dataHooks = require('../util/dataHooks.js'); 
 const { ObjectId } = require('mongodb');
 const { genKey } = require('../util/randGen.js'); 
+const async = require('async')
 const {
     checkIfArrayHasEmptyValues,
     RetrieveTagIDs,
@@ -146,12 +147,10 @@ const retrieveTagId = async (tagList, postID) => {
 }
 
 //Preliminaries: Argument for tagList is already parsed 
-exports.saveTagsFromNewPost = async (tagList, post) => {
-    console.log("saveTagsFromNewPost: ", tagList)
+exports.savePostIDToTags = async (tagList, post) => {
     try {
         //The following code does result to adding the post ObjectId to 
         const IdOfExisting = RetrieveTagIDs(tagList);
-
         const operations = tagList.map(opt =>
         {
             return {
@@ -176,7 +175,7 @@ exports.saveTagsFromNewPost = async (tagList, post) => {
         return savedTagArray;
 
     } catch (e) {
-        console.log("There is an error with saveTagsFromNewPost: ", e)
+        console.log("There is an error with savePostIDToTags: ", e)
     }
 }
  
@@ -202,7 +201,7 @@ exports.DeleteTags = [
 
 //This function is written to complement DeletePostById function in postController.js
 //When a post document is deleted, its objectId must be deleted from all tag documents as well. 
-exports.RemovePostFromTags = (postID) => {
+exports.RemovePostFromAllTags = (postID) => {
     try {
         //The return keyword is necessary because it returns a promise that DeletePostById async parallel is expecting
         return Tag.updateMany({},
@@ -219,4 +218,31 @@ exports.RemovePostFromTags = (postID) => {
     catch (e) {
         console.log("RemovePostFromTags  Error: ", e)
     }
+} 
+
+//tagsToKeep: This is an array of tags to be kept. 
+//oldList: This is an old list of tags before the user decides to update the tags 
+exports.RemovePostFromTags = async (tagsToKeep, oldList, postID) => {
+    try {
+
+        //Filter for tags to be deleted
+        const ToDelete = oldList.filter(old => !tagsToKeep.some(tag => tag._id.toString() === old._id.toString()))
+        if (ToDelete.length > 0) {
+            const operations = ToDelete.map(opt => {
+                return {
+                    updateOne: {
+                        filter: { _id: opt._id },
+                        update: {
+                            $pull: { post: postID }
+                        },
+                    },
+                    upsert: false,
+                }
+            })
+            const result = await Tag.bulkWrite(operations)
+        }
+    } catch (e) {
+        console.log("RemovePostFromTags Error: ", e)
+    }
 }
+

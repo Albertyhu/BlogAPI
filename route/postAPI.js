@@ -9,8 +9,15 @@ router.get('/', cors(), postController.AllPosts)
 
 router.post("/create", cors(), verifyToken, upload.fields([
     { name: "thumbnail", maxCount: 1 },
-    { name: "images", maxCount: 1000}
+    { name: "images", maxCount: 1000 }
 ]), postController.CreatePostAndUpdateTags)
+
+//router.post("/create",
+//    cors(),
+//    verifyToken,
+//    upload.single('thumbnail'),
+//    upload.array('images', 1000), 
+//    postController.CreatePostAndUpdateTags)
 
 //router.post("/create", cors(), verifyToken, upload.none(), postController.CreatePostAndUpdateTags)
 

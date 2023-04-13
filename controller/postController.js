@@ -10,6 +10,8 @@ const Tag = require("../model/tag.js");
 const { genKey } = require('../util/randGen.js');
 const TagController = require('./tagController.js'); 
 const async = require('async');
+const fs = require('fs')
+const path = require("path")
 
 exports.AllPosts = async (req, res, next) => {
     try {
@@ -41,6 +43,7 @@ exports.FindOnePost = async (req, res, next) => {
         if (!result) {
             return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
         }
+
         res.status(200).json({ payload: result }); 
     } catch (e) {
         console.log("Internal server error - FindOnePost:", e) 
@@ -137,38 +140,6 @@ exports.DeletePostById = async (req, res, next) => {
     }
 }
 
-exports.HandleLikeToggle = async (req, res, next) => {
-    try {
-        const UserId = req.pasams.userId; 
-        const PostId = req.params.postId;
-        const result = await Post.findOne({ where: { _id: PostId} })
-            .exec();
-        if (!result) {
-            return res.status(404).json({ message: "Post not found." });
-        }
-        var updatedLikes = []; 
-        if (result.likes.some(val => val._id.toString() == UserId.toString())) {
-            updatedLikes = result.likes.filter(val => val._id.toString() != UserId.toString())
-
-        }
-        else {
-            updatedLikes = result.likes; 
-            updatedLikes.push(UserId); 
-
-        }
-        var obj = {
-            _id: result._id,
-            likes: updatedLikes,
-        }
-        var updatedPost = new Post(obj);
-        await Post.findByIdAndUpdate(PostId, updatedPost)
-        res.status(200).json(updatedLikes)
-
-    } catch (e) {
-        res.status(500).json({ message: "Internal server error." })
-    }
-}
-
 //needs to be tested 
 exports.UpdateLikes = async (req, res, next) => {
     if (req.body.updatedLikes) {
@@ -250,22 +221,22 @@ exports.CreatePostAndUpdateTags = [
             datePublished: DatePublished,
             lastEdited: DatePublished, 
         }
-        console.log('req.files: ', req.files)
         if (typeof req.files != 'undefined' && req.files.thumbnail != null) {
-            console.log("req.files.thumbnail: ", req.files.thumbnail)
             thumbnail = {
-                data: req.files.thumbnail[0].buffer,
-                contentType: req.files.thumbnail[0].mimetype,
+                  data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.thumbnail[0].filename)),
+                  contentType: req.files.thumbnail[0].mimetype,
             }
             obj.thumbnail = thumbnail;
         }
+
         if (typeof req.files != 'undefined' && req.files.images != null) {
+            console.log("req.files.images: ", JSON.parse(req.files.images))
             images = req.files.images.map(file => {
                 return {
-                    data: file.buffer,
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)), 
                     contentType: file.mimetype
                 }
-            })
+            }) 
             obj.images = images;
         }
         try {
@@ -365,7 +336,6 @@ exports.EditPost = [
         } = req.body;
 
 
-        var thumbnail = null;
         var images = null;
 
         if (abstractExceedLimit) {
@@ -389,22 +359,16 @@ exports.EditPost = [
             author,
             lastEdited: Date.now(),
         }
-        if (typeof req.files != 'undefined' && req.files.thumbnail != null) {
-            thumbnail = {
-                data: req.files.thumbnail[0].buffer,
-                contentType: req.files.thumbnail[0].mimetype,
-            }
-            obj.thumbnail = thumbnail; 
-        }
-        //var thumbnail = {};
-        //thumbnail.data = req?.files?.thumbnail[0]?.buffer;
-        //thumbnail.contentType = req?.files?.thumbnail[0]?.mimetype;
-        //obj.thumbnail = Obj.keys(thumbnail).length > 0 ? thumbnail: null;
+
+        var thumbnail = {};
+        thumbnail.data = fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.thumbnail[0].filename));
+        thumbnail.contentType = req?.files?.thumbnail[0]?.mimetype;
+        obj.thumbnail = Obj.keys(thumbnail).length > 0 ? thumbnail: null;
 
         if (typeof req.files != 'undefined' && req.files.images != null) {
             images = req.files.images.map(file => {
                 return {
-                    data: file.buffer,
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
                     contentType: file.mimetype
                 }
             })

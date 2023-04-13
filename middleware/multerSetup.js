@@ -7,13 +7,13 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const ext = path.extname(file.originalname);
-        const filename = `${Date.now()}-${file.filename}${Math.floor(Math.round(Math.random() * 10))}${ext}`;
+        const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
         cb(null, filename)
     },
 }); 
 
 const faceFilter = (req, file, cb) => {
-    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|svg)$/)) {
         return cb(new Error('Only image files are allowed!'));
     }
     cb(null, true);

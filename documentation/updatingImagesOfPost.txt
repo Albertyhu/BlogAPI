@@ -1,0 +1,117 @@
+Users are allowed to upload multiple images onto their post.
+Updating the images is a lot more complicated. 
+
+Sequence of events for deleting images:
+1. User deletes an images from the image array.
+2. When the app makes a fetch request to updating the Post document, 
+it sends an array of ObjectId's of images that are to be kept. This array is stringified before being sent to the server.
+3. The server parses the array in a controller function.
+4. The app has to retrieve the Post document to be updated and then retrive the array of images 
+5. Use Array.filter() method to create an array of ObjectId's of images to be deleted
+
+Example of the steps 4 and 5
+    function (post, callback) {
+        var toDelete = post.images.filter(img => !keepImages.some(val => val.toString() == img._id.toString()))
+        var toDeleteID = toDelete.map(item => item._id); 
+        Post.updateOne({_id: req.params.id }, {
+            $pull: {
+                images: {
+                    _id: {$in: toDeleteID}
+                }
+            },
+        }, { new: true })
+            .then(updatedPost => {
+                return callback(null, updatedPost)
+            })
+            .catch(error => {
+                return callback(error)
+            })
+    },
+
+
+Sequence of events in adding images:
+1. In client side, the user uploads images through the file input tag 
+2. The input must be formatted with the following function 
+
+//setImage is a useState function 
+//const [images, setImage] = useState([])
+
+    function AttachImagesToArray(evt, setImage) {
+        const files = evt.target.files;
+        var images = null;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            //Create FileReader
+            //This is how you can access the necessary file resources of an image 
+            const reader = new FileReader();
+            reader.readAsDataURL(file)
+
+            //Everytime the reader is loaded with something, add the necessary resources into the images array
+            reader.onload = () => {
+                images = {
+                    file: file,
+                    base64: reader.result,
+                };
+                setImage(prev => [...prev, images])
+            }
+        }
+    }
+
+3. Use loop to append image files to a FormData object:
+
+    for (let i = 0; i < images.length; i++) {
+        if (!images[i].file) {
+            keepImages.push(images[i]._id); 
+        }
+        formData.append("images", images[i].file);
+    }
+
+4. On server side, set up Multer normally and write the following route:
+
+    router.put("/:id/edit", cors(), verifyToken, upload.fields([
+        { name: "mainImage", maxCount: 1 },
+        { name: "images", maxCount: 1000 }
+    ]), postController.EditPost)
+
+or it could be 
+    router.put("/:id/edit", cors(), verifyToken, upload.array("images", 1000), postController.EditPost)
+
+The number 1000 is the limit of images that you allow the client to send. 
+
+5. Access the images through req.file and format the images inside the array accordingly to the Post schema: 
+
+        var newImages = null;
+
+        if (typeof req.files.images != 'undefined' && req.files.images.length > 0) {
+            newImages = req.files.images.map(file => {
+                return {
+                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
+                    contentType: file.mimetype,
+                }
+            })
+        }
+
+6. Update the post with the following function:
+
+        function (post, callback) {
+            if (newImages) {
+                Post.updateOne({ _id: req.params.id },
+                    {
+                        $addToSet: {
+                            images: { $each: newImages }
+                        },
+                    },
+                    { new: true }
+                )
+                    .then(updatedPost => {
+                        return callback(null,updatedPost)
+                    })
+                    .catch(error => {
+                        return callback(error)
+                    })
+            }
+            return callback(null, post)
+        },
+
+Note: Do not combine deleting and adding images into one function inside async.waterfall operation. 
+It will create a conflict.

@@ -12,17 +12,9 @@ router.post("/create", cors(), verifyToken, upload.fields([
     { name: "images", maxCount: 1000 }
 ]), postController.CreatePostAndUpdateTags)
 
-//router.post("/create",
-//    cors(),
-//    verifyToken,
-//    //upload.single('thumbnail'),
-//    upload.array('images', 1000), 
-//    postController.CreatePostAndUpdateTags)
-
 router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPostsByCategory);
 
 router.get('/:id', cors(), postController.FindOnePost)
-
 
 router.put("/:id/edit", cors(), verifyToken, upload.fields([
     { name: "mainImage", maxCount: 1 },

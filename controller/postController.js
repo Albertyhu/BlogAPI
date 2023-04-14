@@ -466,6 +466,7 @@ exports.EditPost = [
                                 return callback(error)
                             })
                     }
+                    return callback(null, post)
                 },
                 function (post, callback) {
                     TagController.RemovePostFromTags(tagsToKeep, oldTagList, req.params.id)

@@ -8,18 +8,16 @@ const { verifyToken } = require('../middleware/verifyMember.js')
 router.get('/', cors(), postController.AllPosts)
 
 router.post("/create", cors(), verifyToken, upload.fields([
-    { name: "thumbnail", maxCount: 1 },
+    { name: "mainImage", maxCount: 1 },
     { name: "images", maxCount: 1000 }
 ]), postController.CreatePostAndUpdateTags)
 
 //router.post("/create",
 //    cors(),
 //    verifyToken,
-//    upload.single('thumbnail'),
+//    //upload.single('thumbnail'),
 //    upload.array('images', 1000), 
 //    postController.CreatePostAndUpdateTags)
-
-//router.post("/create", cors(), verifyToken, upload.none(), postController.CreatePostAndUpdateTags)
 
 router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPostsByCategory);
 
@@ -27,11 +25,9 @@ router.get('/:id', cors(), postController.FindOnePost)
 
 
 router.put("/:id/edit", cors(), verifyToken, upload.fields([
-    { name: "thumbnail", maxCount: 1 },
+    { name: "mainImage", maxCount: 1 },
     { name: "images", maxCount: 1000 }
 ]), postController.EditPost)
-
-//router.put("/:id/edit", cors(), verifyToken, upload.none(), postController.EditPost)
 
 router.put('/:id/update_likes', cors(), verifyToken, upload.none(), postController.UpdateLikes)
 

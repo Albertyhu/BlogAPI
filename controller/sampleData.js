@@ -65,7 +65,7 @@ exports.populate = (req, res, next) => {
         //() => { PopulatePosts(SamplePosts) }
         //() => { PopulateComments(SampleComments)}
         //() => DeleteAllPost(), 
-        () => { DeletePostsByTitle("I love dogs!")}
+        () => { DeletePostsByTitle("How to pet a dog")}
     ],
         function (err, results) {
             if (err) {

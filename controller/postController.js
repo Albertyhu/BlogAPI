@@ -36,9 +36,14 @@ exports.FindOnePost = async (req, res, next) => {
         const PostId = req.params.id; 
         const result = await Post.findById(PostId)
             .populate('author')
-            .populate("comments")
+            .populate({
+                path: 'comments',
+                populate: {
+                    path: 'author',
+                    model: 'user', 
+                }
+            })
             .populate("tag")
-            .populate("likes")
             .exec()
         if (!result) {
             return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
@@ -140,23 +145,53 @@ exports.DeletePostById = async (req, res, next) => {
     }
 }
 
-//needs to be tested 
 exports.UpdateLikes = async (req, res, next) => {
     if (req.body.updatedLikes) {
-        const newUpdate = new Post({
-            likes: JSON.parse(req.body.updatedLikes),
-        })
-        console.log("newUpdate: ", newUpdate)
         await Post.findByIdAndUpdate(req.params.id, { likes: JSON.parse(req.body.updatedLikes) } , {new: true})
-            .then(result => {
-                console.log("Update is successful")
-                console.log("result: ", result)
-            })
             .catch(e => {
                 console.log(`There is an error in updating likes on ${req.params.id}`, e)
             })
     } else {
         console.log(`There is a problem with the likes array passed from client`)
+    }
+}
+
+
+exports.AddToLikes = async (req, res) => {
+    try {
+        const userID = req.body.userID;
+        await Post.findByIdAndUpdate(req.params.id, {
+            $addToSet: {
+                likes: userID, 
+            }
+        })
+            .then(result => {
+                console.log("result: ", result)
+            })
+            .catch(e => {
+                console.log(`AddToLikes error`, e)
+            })
+    } catch (e) {
+        console.log(`AddToLikes error`, e)
+    }
+}
+
+exports.RemoveLikes = async (req, res) => {
+    try {
+        const userID = req.body.userID;
+        await Post.findByIdAndUpdate(req.params.id, {
+            $pull: {
+                likes: userID,
+            }
+        })
+            .then(result => {
+                console.log("result: ", result)
+            })
+            .catch(e => {
+                console.log(`AddToLikes error`, e)
+            })
+    } catch (e) {
+        console.log(`AddToLikes error`, e)
     }
 }
 

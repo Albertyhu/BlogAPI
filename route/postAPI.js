@@ -4,6 +4,7 @@ const cors = require('cors');
 const postController = require('../controller/postController.js');
 const { upload } = require('../middleware/multerSetup.js');
 const { verifyToken } = require('../middleware/verifyMember.js') 
+const commentController = require('../controller/commentController.js'); 
 
 router.get('/', cors(), postController.AllPosts)
 
@@ -23,6 +24,12 @@ router.put("/:id/edit", cors(), verifyToken, upload.fields([
 
 router.put('/:id/update_likes', cors(), verifyToken, upload.none(), postController.UpdateLikes)
 
+router.put('/:id/add_like', cors(), verifyToken, upload.none(), postController.AddToLikes); 
+
+router.put('/:id/remove_like', cors(), verifyToken, upload.none(), postController.RemoveLikes)
+
 router.delete("/:id/delete", cors(), verifyToken, upload.none(), postController.DeletePostById);
+
+router.post("/:id/add_comment", cors(), verifyToken, upload.array("images"), commentController.AddCommentToPost)
 
 module.exports = router;     

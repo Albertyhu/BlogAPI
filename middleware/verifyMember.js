@@ -37,3 +37,22 @@ exports.verifyToken = (req, res, next) => {
        // return res.status(403).json({ error: [{ param: "authorization", msg: "User is forbidden" }] })
     }
 } 
+
+
+//not finished
+exports.verifyOwner = (req, res, next) => {
+    const token = req.headers.authorization || req.query.token;
+    const owner = req.body.
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ error: [{ param: "authorization", msg: "User lacks authorization token." }] })
+        }
+
+        if (decoded.role == "admin") {
+            next()
+        }
+        else {
+            return res.status(403).json({ error: [{ param: "authorization", msg: 'You are not authorized to access this resource' }] });
+        }
+    })
+}

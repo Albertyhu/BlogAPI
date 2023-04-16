@@ -9,7 +9,10 @@ const Comment = new Schema({
     lastEdited: { type: Date },
     images: [{ data: Buffer, contentType: String }],
     author: { type: Schema.Types.ObjectId, ref: "User" }, 
-    replies: [{type: Schema.Types.ObjectId, ref: "Comment"}],
+    replies: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
+    commentRepliedTo: { type: Schema.Types.ObjectId, ref: "Comment" }, 
+    userRepliedTo: {type:String},
+    rootComment: {type:Schema.Types.ObjectId, ref: "Comment"},
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
     post: {type: Schema.Types.ObjectId, ref: "Post" },
 })

@@ -39,7 +39,8 @@ exports.AddCommentToPost = [
                     contentType: img.memeType,
                 }
             })
-            obj.images = images; 
+            if(images.length > 0)
+                obj.images = images; 
         }
         const newComment = new Comment(obj)
 

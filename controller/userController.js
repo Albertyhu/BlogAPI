@@ -21,23 +21,6 @@ exports.GetAllUsers = async (req, res, next) => {
     }
 }
 
-
-/*Alternative way of writing GetAllUsers */
-//exports.GetAllUsers = (req, res, next) => {
-//    User.find({})
-//        .sort({ username: 1 })
-//        .exec()
-//        .then((result) => {
-//            console.log("result: ", result)
-//            res.status(200).json(result)
-//        })
-//        .catch(err =>{
-//            console.log("error getting users: ", err)
-//            return res.status(404).json({ message: "No users." })
-//        })
-//}
-
-
 exports.GetUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id)

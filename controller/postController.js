@@ -35,20 +35,34 @@ exports.FindOnePost = async (req, res, next) => {
     try {
         const PostId = req.params.id; 
         const result = await Post.findById(PostId)
-            .populate('author')
+            .populate({
+                path: 'author',
+                model: "User",
+            })
             .populate({
                 path: 'comments',
-                populate: {
-                    path: 'author',
-                    model: 'user', 
-                }
+                model: "Comment",
+                populate: [
+                    {
+                        path: 'author',
+                        model: 'User', 
+                    },
+                    {
+                        path: "replies",
+                        model: "Comment",
+                        populate: {
+                            path: 'author',
+                            model: 'User',
+                        }
+                    },
+                    ]
             })
             .populate("tag")
             .exec()
         if (!result) {
             return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
         }
-
+  //      console.log('comments: ', result.comments)
         res.status(200).json({ payload: result }); 
     } catch (e) {
         console.log("Internal server error - FindOnePost:", e) 
@@ -255,7 +269,7 @@ exports.CreatePostAndUpdateTags = [
             datePublished: DatePublished,
             lastEdited: DatePublished, 
         }
-
+        //console.log("req.files: ", req.files)
         if (typeof req.files.mainImage != 'undefined' && req.files.mainImage != null) {
             mainImage = {
                   data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.mainImage[0].filename)),
@@ -284,6 +298,8 @@ exports.CreatePostAndUpdateTags = [
             })
             obj.images = images;
         }
+
+        //console.log("obj.images: ", obj.images)
         try {
             const tagArray = JSON.parse(tag)
             async.waterfall([

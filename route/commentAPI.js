@@ -10,8 +10,10 @@ router.put("/:id/edit", cors(), verifyToken, commentController.EditComment)
 
 router.put("/:id/updateLike", cors(), verifyToken, commentController.UpdateLikes)
 
-router.put('/:id/add_like', cors(), verifyToken, upload.none(), postController.AddToLikes);
+router.put('/:id/add_like', cors(), verifyToken, upload.none(), commentController.AddToLikes);
 
-router.put('/:id/remove_like', cors(), verifyToken, upload.none(), postController.RemoveLikes)
+router.put('/:id/remove_like', cors(), verifyToken, upload.none(), commentController.RemoveLikes)
+
+router.delete('/:id/delete_completely', cors(), verifyToken, upload.none(), commentController.DeleteCompletely)
 
 module.exports = router; 

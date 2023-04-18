@@ -2,8 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\controller",
-    "\\middleware",
-    "\\model",
+    "\\public",
+    "\\public\\uploads",
     "\\route",
     "\\sampleData",
     "\\util",
@@ -11,6 +11,6 @@
     "\\views\\authentication",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\model\\comment.js",
+  "SelectedNode": "\\route\\authAPI.js",
   "PreviewInSolutionExplorer": false
 }

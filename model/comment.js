@@ -16,7 +16,7 @@ const Comment = new Schema({
     //This refers to the comment or reply that that this comment is replying to. 
     commentRepliedTo: { type: Schema.Types.ObjectId, ref: "Comment" }, 
 
-    //This refers to the author of the comment or reply that this comment is replying tot. 
+    //This refers to the author of the comment or reply that this comment is replying to. 
     userRepliedTo: { type: String },
 
     //This refers to the main comment being replied to 

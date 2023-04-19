@@ -15,7 +15,7 @@ exports.AddCommentToPost = [
     body("content")
         .trim()
         .isLength({ min: 1 })
-        .withMessage("You have to write to post your comment.")
+        .withMessage("You have to write something to post your comment.")
         .escape(),
     body("author"),
     (req, res, next) => {
@@ -64,6 +64,7 @@ exports.AddCommentToPost = [
                 })
                 //.catch(error => callback(error))
             },
+            //The purpose of this function is to help the client render the profile picture and username that are to be placed next to the comment after the comment gets posted.
             function (comment, post, callback) {
                 User.findOne({_id: req.body.author})
                     .then(author => callback(null, comment, post, author))
@@ -79,6 +80,83 @@ exports.AddCommentToPost = [
         })
     }
 ] 
+
+exports.AddReplyToComment = [
+    body("content")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("You have to write something to post your reply.")
+        .escape(),
+
+    //This is the ObjectId of the author of the reply
+    body("author"),
+    //This is the username of the author of the comment being replied to 
+    body("userRepliedTo"), 
+    body("postId"), 
+    body("root"),
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(404).json({ error: errors.array() })
+        }
+        var images = [];
+        var date = Date.now();
+        const obj = {
+            content: he.decode(req.body.content),
+            datePublished: date,
+            lastEdited: date,
+            author: req.body.author,
+            commentRepliedTo: req.params.id,
+            rootComment: req.params.id, 
+            post: req.body.postId, 
+            userRepliedTo: req.body.userRepliedTo, 
+        }
+        if (typeof req.files != 'undefined' && req.files.length > 0) {
+            images = req.files.map(img => {
+                return {
+                    data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    contentType: img.mimetype,
+                }
+            })
+            obj.images = images;
+        }
+
+        //console.log("obj.images: ", obj.images)
+        const newComment = new Comment(obj)
+
+        async.waterfall([
+            function (callback) {
+                newComment.save()
+                    .then(reply => {
+                        return callback(null, reply)
+                    })
+                    .catch(error => { return callback(error) })
+            },
+            function (reply, callback) {
+                Comment.findByIdAndUpdate(req.params.id, {
+                    $addToSet: { replies: reply._id }
+                },
+                    { new: true }
+                ).then(comment => {
+                    return callback(null, reply, comment)
+                })
+                .catch(error => callback(error))
+            },
+            function (reply, comment, callback) {
+                User.findOne({ _id: req.body.author })
+                    .then(author => callback(null, reply, comment, author))
+                    .catch(error => callback(error))
+            }
+        ], (err, reply, comment, author) => {
+            if (err) {
+                // console.log("AddCommentToPost error: ", err)
+                return res.status(500).json({ error: [{ param: 'server', msg: 'Something when wrong with the server' }] })
+            }
+            console.log("Reply has been successfully added.")
+            res.status(200).json({ reply, author })
+        })
+    }
+]
 
 exports.UpdateLikes = async (req, res, next) => {
     if (req.body.updatedLikes) {

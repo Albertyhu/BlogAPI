@@ -20,7 +20,7 @@ const Comment = new Schema({
     userRepliedTo: { type: String },
 
     //This refers to the main comment being replied to 
-    rootComment: {type:Schema.Types.ObjectId, ref: "Comment"},
+    rootComment: {type:Schema.Types.ObjectId, ref: "Comment"},  
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     //This refers to the post that the comment belongs to 

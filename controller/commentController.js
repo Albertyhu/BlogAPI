@@ -92,6 +92,7 @@ exports.AddReplyToComment = [
     body("author"),
     //This is the username of the author of the comment being replied to 
     body("userRepliedTo"), 
+    body("commentRepliedTo"), 
     body("postId"), 
     body("root"),
     (req, res, next) => {
@@ -106,7 +107,7 @@ exports.AddReplyToComment = [
             datePublished: date,
             lastEdited: date,
             author: req.body.author,
-            commentRepliedTo: req.params.id,
+            commentRepliedTo: req.body.commentRepliedTo,
             rootComment: req.params.id, 
             post: req.body.postId, 
             userRepliedTo: req.body.userRepliedTo, 
@@ -130,7 +131,10 @@ exports.AddReplyToComment = [
                     .then(reply => {
                         return callback(null, reply)
                     })
-                    .catch(error => { return callback(error) })
+                    .catch(error => {
+                        console.log("There is an error with saving the reply as a comment: ", error)
+                        return callback(error)
+                    })
             },
             function (reply, callback) {
                 Comment.findByIdAndUpdate(req.params.id, {
@@ -140,23 +144,29 @@ exports.AddReplyToComment = [
                 ).then(comment => {
                     return callback(null, reply, comment)
                 })
-                .catch(error => callback(error))
+                    .catch(error => {
+                        console.log("There is an error with saving the reply ObjectId into the parent comment: ", error)
+                        return callback(error)
+                    })
             },
             function (reply, comment, callback) {
                 User.findOne({ _id: req.body.author })
                     .then(author => callback(null, reply, comment, author))
-                    .catch(error => callback(error))
+                    .catch(error => {
+                        console.log("There is an error with returning the author: ", error)
+                        return callback(error)
+                    })
             }
         ], (err, reply, comment, author) => {
             if (err) {
                 // console.log("AddCommentToPost error: ", err)
-                return res.status(500).json({ error: [{ param: 'server', msg: 'Something when wrong with the server' }] })
+                return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
             }
             console.log("Reply has been successfully added.")
-            res.status(200).json({ reply, author })
-        })
+            res.status(200).json({ comment: reply, author })
+        })  
     }
-]
+] 
 
 exports.UpdateLikes = async (req, res, next) => {
     if (req.body.updatedLikes) {
@@ -278,7 +288,7 @@ exports.DeleteCompletely = (req, res, next) => {
                 return res.status(500).json({ error: [{param: "server", msg: "Internal Server Error"}]})
             }
             console.log("Comment has been completely deleted.")
-            return res.status(200).json({ message: [{param: "general", msg: "The comment and all its replies have been deleted."}]})
+            return res.status(200).json({ message: [{param: "general", msg: "Your comment is successfully deleted."}]})
         })
     } catch (e) {
         console.log("DeleteCompletely error: ", e)

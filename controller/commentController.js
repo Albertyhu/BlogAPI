@@ -87,7 +87,6 @@ exports.AddReplyToComment = [
         .isLength({ min: 1 })
         .withMessage("You have to write something to post your reply.")
         .escape(),
-
     //This is the ObjectId of the author of the reply
     body("author"),
     //This is the username of the author of the comment being replied to 
@@ -159,7 +158,7 @@ exports.AddReplyToComment = [
             }
         ], (err, reply, comment, author) => {
             if (err) {
-                // console.log("AddCommentToPost error: ", err)
+                 console.log("AddCommentToPost error: ", err)
                 return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
             }
             console.log("Reply has been successfully added.")
@@ -221,9 +220,56 @@ exports.RemoveLikes = async (req, res) => {
 }
 
 
-exports.EditComment = async (req, res, next) => {
-    
-}
+exports.EditComment = [
+    body("content")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("Your comment cannot be empty")
+        .escape(),
+    body("authorId"), 
+    body("userId")
+        .custom((val, { req }) => {
+            if (val != req.body.authorId) {
+                throw new Error("You are not the author of the comment")
+            }
+            return true; 
+        }),
+    async (req, res, next) => {
+        var errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(404).json({ error: errors.array() })
+        }
+        const obj = {
+            content: he.decode(req.body.content),
+            lastEdited: Date.now(),
+        }
+        console.log("req.files: ", req.files)
+        if (typeof req.files != 'undefined') {
+            var images = req.files.map(img => {
+                return {
+                    data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    contentType: img.mimetype,
+                }
+            })
+            obj.images = images;
+        }
+        console.log("obj: ", obj)
+        try {
+            await Comment.findByIdAndUpdate(req.params.id, obj, { new: true })
+                .then(comment => {
+                    console.log("The comment was successfully updated.")
+                    res.status(200).json({comment})
+                })
+                .catch(error => {
+                    console.log("EditComment Error 1: ", error)
+                    res.status(500).json({ error: [{param: "server", msg: "Internal server error"}] })
+                })
+        } catch (e) {
+             console.log("EditComment error 2: ", e)
+            return res.status(500).json({ error: [{ param: 'server', msg: 'Internal server error' }] })
+        }
+    }
+]
 
 //This deletes the comment and all it's replies
 exports.DeleteCompletely = (req, res, next) => {

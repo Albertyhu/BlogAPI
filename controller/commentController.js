@@ -235,7 +235,6 @@ exports.EditComment = [
         .isLength({ min: 1 })
         .withMessage("Your comment cannot be empty")
         .escape(),
-    body("keepImages"), 
     async (req, res, next) => {
         var errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -245,12 +244,7 @@ exports.EditComment = [
             content: he.decode(req.body.content),
             lastEdited: Date.now(),
         }
-        console.log("req.files: ", req.files)
         var keepImages = [];
-        if(req.body.keepImages)
-            keepImages = JSON.parse(req.body.keepImages); 
-        console.log("req.body.keepImages: ", req.body.keepImages)
-        console.log("keepImages: ", keepImages)
 
         var newImages = []; 
         if (typeof req.files != 'undefined') {

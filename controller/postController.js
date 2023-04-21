@@ -428,7 +428,7 @@ exports.EditPost = [
         var keepImages = []; 
         //check to see if there are existing images in the images array. 
         if (req.body.keepImages) {
-            var keepImages = JSON.parse(req.body.keepImages); 
+            keepImages = JSON.parse(req.body.keepImages); 
         }
         var newImages = null;
 

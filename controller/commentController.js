@@ -59,10 +59,11 @@ exports.AddCommentToPost = [
                     $addToSet: { comments: comment._id }
                 },
                     { new: true }
-                ).then(post => {
+                )
+                .then(post => {
                     return callback(null, comment, post)
                 })
-                //.catch(error => callback(error))
+                .catch(error => callback(error))
             },
             //The purpose of this function is to help the client render the profile picture and username that are to be placed next to the comment after the comment gets posted.
             function (comment, post, callback) {
@@ -221,11 +222,6 @@ exports.RemoveLikes = async (req, res) => {
 
 
 exports.EditComment = [
-    body("content")
-        .trim()
-        .isLength({ min: 1 })
-        .withMessage("Your comment cannot be empty")
-        .escape(),
     body("authorId"), 
     body("userId")
         .custom((val, { req }) => {
@@ -234,6 +230,12 @@ exports.EditComment = [
             }
             return true; 
         }),
+    body("content")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("Your comment cannot be empty")
+        .escape(),
+    body("keepImages"), 
     async (req, res, next) => {
         var errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -244,26 +246,102 @@ exports.EditComment = [
             lastEdited: Date.now(),
         }
         console.log("req.files: ", req.files)
+        var keepImages = [];
+        if(req.body.keepImages)
+            keepImages = JSON.parse(req.body.keepImages); 
+        console.log("req.body.keepImages: ", req.body.keepImages)
+        console.log("keepImages: ", keepImages)
+
+        var newImages = []; 
         if (typeof req.files != 'undefined') {
-            var images = req.files.map(img => {
+            newImages = req.files.map(img => {
                 return {
                     data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
                     contentType: img.mimetype,
                 }
             })
-            obj.images = images;
         }
-        console.log("obj: ", obj)
         try {
-            await Comment.findByIdAndUpdate(req.params.id, obj, { new: true })
-                .then(comment => {
-                    console.log("The comment was successfully updated.")
-                    res.status(200).json({comment})
-                })
-                .catch(error => {
+            async.waterfall([
+                function (callback) {
+                    Comment.findByIdAndUpdate(req.params.id, obj, { new: true })
+                        .then(comment => {
+                            console.log("The content of comment was successfully updated")
+                            return callback(null, comment)
+                        })
+                        .catch(error => {
+                            console.log("There is an error with updating content of the comment: ", error)
+                            return callback(error)
+                        })
+                },
+                function (comment, callback) {
+                    var ToDelete = comment.images.filter(img => !keepImages.some(existing => existing._id.toString() == img._id.toString()));
+                    var ToDeleteId = ToDelete.map(val => val._id);
+                    Comment.updateOne({ _id: req.params.id }, {
+                        $pull: {
+                            images: {
+                                _id: { $in: ToDeleteId }
+                            }
+                        }
+                    }, { new: true })
+                        .then(result => {
+                            console.log("Any images to be deleted are removed.")
+                            return callback(null, comment, result)
+                        })
+                        .catch(error => {
+                            console.log("There is an error with removing images: ", error)
+                            return callback(error)
+                        })
+                },
+                function (comment, result, callback) {
+                    Comment.updateOne({ _id: req.params.id }, {
+                        $addToSet: {
+                            images: { $each: newImages }
+                        }
+                    }, { new: true })
+                        .then(result => {
+                            console.log("Any new images uploaded are added")
+                            return callback(null, comment, result)
+                        })
+                        .catch(error => {
+                            console.log("There is an error with adding images: ", error)
+                            return callback(error)
+                        })
+                },
+                function (comment, result, callback) {
+                    Comment.findOne({ _id: req.params.id })
+                        .populate(
+                            {
+                            path: 'author',
+                            model: "User",
+                        })
+                        .populate(
+                                {
+                                path: 'replies',
+                                model: "Comment",
+                                populate: ({
+                                    path: "author",
+                                    model: "User", 
+                                }
+                           )
+                        })
+                        .then(updatedComment => {
+                            console.log("Updated comment retrieved")
+                            return callback(null, comment, result, updatedComment)
+                        })
+                        .catch(error => {
+                            console.log("There was an error with trying to retrieve updated comment: ", error)
+                            return callback(error)
+                        })
+                },
+            ], (error, comment, result, updatedComment) => {
+                if (error) {
                     console.log("EditComment Error 1: ", error)
-                    res.status(500).json({ error: [{param: "server", msg: "Internal server error"}] })
-                })
+                    res.status(400).json({ error: [{param: "general", msg: error}]})
+                }
+                console.log("Comment has been updated: ")
+                res.status(200).json({comment: updatedComment})
+            })
         } catch (e) {
              console.log("EditComment error 2: ", e)
             return res.status(500).json({ error: [{ param: 'server', msg: 'Internal server error' }] })

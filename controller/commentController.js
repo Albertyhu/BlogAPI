@@ -36,7 +36,8 @@ exports.AddCommentToPost = [
         if (typeof req.files != 'undefined' && req.files.length > 0) {
             images = req.files.map(img => {
                 return {
-                    data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    data: img.buffer, 
                     contentType: img.mimetype,
                 }
             })
@@ -115,7 +116,8 @@ exports.AddReplyToComment = [
         if (typeof req.files != 'undefined' && req.files.length > 0) {
             images = req.files.map(img => {
                 return {
-                    data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    data: img.buffer, 
                     contentType: img.mimetype,
                 }
             })
@@ -250,7 +252,8 @@ exports.EditComment = [
         if (typeof req.files != 'undefined') {
             newImages = req.files.map(img => {
                 return {
-                    data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
+                    data: img.buffer, 
                     contentType: img.mimetype,
                 }
             })
@@ -317,7 +320,7 @@ exports.EditComment = [
                                     path: "author",
                                     model: "User", 
                                 }
-                           )
+                           ) 
                         })
                         .then(updatedComment => {
                             console.log("Updated comment retrieved")

@@ -269,37 +269,26 @@ exports.CreatePostAndUpdateTags = [
             datePublished: DatePublished,
             lastEdited: DatePublished, 
         }
-        //console.log("req.files: ", req.files)
         if (typeof req.files.mainImage != 'undefined' && req.files.mainImage != null) {
             mainImage = {
-                  data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.mainImage[0].filename)),
+                  data: req.files.mainImage[0].buffer, 
                   contentType: req.files.mainImage[0].mimetype,
             }
             obj.mainImage = mainImage;
         }
         var images = null;
 
-        //if (typeof req.files != 'undefined' && req.files.length > 0) {
-        //    images = req.files.map(file => {
-        //        return {
-        //            data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
-        //            contentType: file.mimetype,
-        //        }
-        //    })
-        //    obj.images = images;
-        //}
-
         if (typeof req.files.images != 'undefined' && req.files.images.length > 0) {
             images = req.files.images.map(file => {
                 return {
-                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
+                    data: file.buffer,
                     contentType: file.mimetype,
                 }
             })
             obj.images = images;
         }
 
-        //console.log("obj.images: ", obj.images)
+        console.log("obj.images: ", obj.images)
         try {
             const tagArray = JSON.parse(tag)
             async.waterfall([
@@ -420,7 +409,8 @@ exports.EditPost = [
 
         if (typeof req.files.mainImage != 'undefined ' && req.files.mainImage != null) {
             var mainImage = {};
-            mainImage.data = fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.mainImage[0].filename));
+           // mainImage.data = fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.mainImage[0].filename));
+            mainImage.data = req.files.mainImage[0].buffer, 
             mainImage.contentType = req?.files?.mainImage[0]?.mimetype;
             obj.mainImage = mainImage;
         }
@@ -435,7 +425,8 @@ exports.EditPost = [
         if (typeof req.files.images != 'undefined' && req.files.images.length > 0) {
             newImages = req.files.images.map(file => {
                 return {
-                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
+                    //data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
+                    data: file.buffer,
                     contentType: file.mimetype,
                 }
             })
@@ -482,25 +473,27 @@ exports.EditPost = [
 
                         })
                 },
-                //delete and add images 
+                //delete old images and keep certain images
                 function (post, callback) {
                     var toDelete = post.images.filter(img => !keepImages.some(val => val.toString() == img._id.toString()))
                     var toDeleteID = toDelete.map(item => item._id); 
-                    Post.updateOne({_id: req.params.id }, {
+                    Post.updateOne({ _id: req.params.id }, {
                         $pull: {
                             images: {
-                                _id: {$in: toDeleteID}
+                                _id: { $in: toDeleteID }
                             }
                         },
                     }, { new: true })
-                        .then(updatedPost => {
-                            return callback(null, updatedPost)
+                        .then((deleteResult) => {
+                           // return callback(null, post)
+                            return callback(null, post, deleteResult)
                         })
                         .catch(error => {
                             return callback(error)
                         })
                 },
-                function (post, callback) {
+                //add new images 
+                function (post, deleteResult, callback) {
                     if (newImages) {
                         Post.updateOne({ _id: req.params.id },
                             {
@@ -510,34 +503,40 @@ exports.EditPost = [
                             },
                             { new: true }
                         )
-                            .then(updatedPost => {
-                                return callback(null,updatedPost)
+                            .then(AddImagesResult => {
+                                //return callback(null, post)
+                                return callback(null, post, deleteResult, AddImagesResult)
                             })
                             .catch(error => {
                                 return callback(error)
                             })
                     }
-                    return callback(null, post)
+                    else {
+                        return callback(null, post, deleteResult, null)
+                    }
                 },
-                function (post, callback) {
+                //Remove tags from post 
+                function (post, deleteResult, AddImagesResult, callback) {
                     TagController.RemovePostFromTags(tagsToKeep, oldTagList, req.params.id)
-                        .then(()=> {
-                            return callback(null, post)
+                        .then(RemoveTagsResult=> {
+                            return callback(null, post, deleteResult, AddImagesResult, RemoveTagsResult)
                         })
                         .catch(error => callback(error))
                 },
-                function (post, callback) {
+                //save the ObjectId of post to the tags 
+                function (post, deleteResult, AddImagesResult, RemoveTagsResult, callback) {
                     TagController.savePostIDToTags(newTags, post)
                         .then(newlyAddedTags => {
                             //updatedTagList will containg the old and new tags with their name and ObjectID's
                             var updatedTagList = newlyAddedTags.concat(tagsToKeep)
-                            return callback(null, post, updatedTagList)
+                            return callback(null, post, deleteResult, AddImagesResult, RemoveTagsResult, updatedTagList)
                         })
                         .catch(error => {
                             return callback(error)
                         })
                 },
-                function (post, updatedTagList, callback) {
+                //Add tags to post
+    function (post, deleteResult, AddImagesResult, RemoveTagsResult, updatedTagList, callback) {
                     const newUpdate = {
                         tag: updatedTagList,
                         _id: req.params.id,
@@ -545,13 +544,13 @@ exports.EditPost = [
                     Post.findByIdAndUpdate(req.params.id, newUpdate, { new: true })
                         .then(updatedPost => {
                             console.log("Tags are successfully saved on post")
-                            return callback(null, updatedPost)
+                            return callback(null, post, deleteResult, AddImagesResult, RemoveTagsResult, updatedTagList, updatedPost)
                         })
                         .catch(err => {
                             return callback(err)
-                        })
+                        }) 
                 },
-            ], (err, updatedPost) => {
+                ], (err, post, deleteResult, AddImagesResult, RemoveTagsResult, updatedTagList, updatedPost) => {
                 if (err) {
                     console.log("There is an error in updating post: ", err)
                     res.status(400).json({ error: [{param: "general", msg: err}]})

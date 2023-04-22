@@ -40,6 +40,7 @@ exports.CreateCategory = [
         .isLength({ max: 125 })
         .withMessage("The description cannot exceed over 125 characters.")
         .escape(), 
+    body("administrator"),
     async (req, res) => {
         const { name, description} = req.body; 
         var errors = validationResult(req); 
@@ -58,13 +59,15 @@ exports.CreateCategory = [
                 name: name ? he.decode(name) : "", 
                 description: description.trim() ? he.decode(description.trim()) : "", 
                 dateCreated: Date.now(),
+                administrator: [req.body.administrator], 
             }
+
             if (req.file) {
                 categoryImage = {
-                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+                    data: req.file.buffer,
                     contentType: req.file.mimetype,
                 }
-                obj.image = categoryImage; 
+                obj.image = categoryImage;
             }
             const newCategory = new Category(obj);
             await newCategory.save()
@@ -127,7 +130,7 @@ exports.EditCategory = [
             }
             if (req.file) {
                 categoryImage = {
-                    data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
+                    data: req.file.buffer,
                     contentType: req.file.mimetype,
                 }
                 obj.image = categoryImage;

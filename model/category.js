@@ -8,6 +8,7 @@ const Category = new Schema({
     description: { type: String },
     post: [{ type: Schema.Types.ObjectId, ref: "Post" }], 
     dateCreated: { type: Date }, 
+    administrator: [{ type: Schema.Types.ObjectId, ref: "User" }], 
 })
 
 module.exports = mongoose.model("Category", Category); 

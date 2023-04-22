@@ -15,6 +15,8 @@ const User = new Schema({
         platform: { type: String },
         link: { type: String }
     }],
+    images: [{ data: Buffer, contentType: String }], 
+    communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }]
 })
 
 User.virtual("formatted_JoinedDate").get(function () {

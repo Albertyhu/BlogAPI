@@ -2,15 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\model",
-    "\\public\\assets",
-    "\\public\\assets\\icon",
-    "\\public\\assets\\images",
-    "\\public\\stylesheets",
-    "\\public\\uploads",
-    "\\route",
-    "\\views\\authentication",
-    "\\views\\partials"
+    "\\route"
   ],
-  "SelectedNode": "\\public",
+  "SelectedNode": "\\model\\post.js",
   "PreviewInSolutionExplorer": false
 }

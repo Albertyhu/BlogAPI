@@ -24,7 +24,9 @@ const Comment = new Schema({
     likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     //This refers to the post that the comment belongs to 
-    post: {type: Schema.Types.ObjectId, ref: "Post" },
+    post: { type: Schema.Types.ObjectId, ref: "Post" },
+
+    userPhoto: { type: Schema.Types.ObjectId, ref: "UserPhoto" }, 
 })
 
 Comment.virtual("formatted_dateCreated").get(function () {

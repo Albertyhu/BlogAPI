@@ -409,7 +409,6 @@ exports.EditPost = [
 
         if (typeof req.files.mainImage != 'undefined ' && req.files.mainImage != null) {
             var mainImage = {};
-           // mainImage.data = fs.readFileSync(path.join(__dirname, '../public/uploads/', req.files.mainImage[0].filename));
             mainImage.data = req.files.mainImage[0].buffer, 
             mainImage.contentType = req?.files?.mainImage[0]?.mimetype;
             obj.mainImage = mainImage;

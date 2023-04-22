@@ -56,18 +56,22 @@ app.use((req, res, next) => {
 
 //the body parse lines should always be defined before routes 
 const mainRoute = require('./route/api.js'); 
+const userRoute = require("./route/userAPI.js"); 
 const postRoute = require('./route/postAPI.js');
 const authRoute = require('./route/authAPI.js'); 
 const categoryRoute = require("./route/categoryAPI.js"); 
 const tagRoute = require("./route/tagAPI.js");  
 const commentRoute = require("./route/commentAPI.js"); 
- 
+const userPhotoRoute = require("./route/userPhotoAPI.js"); 
+
 app.use('/', mainRoute);
+app.use("/users", userRoute); 
 app.use('/post', postRoute);
 app.use('/auth', authRoute);
 app.use('/category', categoryRoute);
 app.use('/tags', tagRoute);
 app.use('/comment', commentRoute);
+app.use('/userPhoto', userPhotoRoute); 
 
 //This makes sure that the corsOptions are universally applied 
 app.options('*', cors(corsOptions));

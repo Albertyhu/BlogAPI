@@ -15,7 +15,7 @@ const User = new Schema({
         platform: { type: String },
         link: { type: String }
     }],
-    images: [{ data: Buffer, contentType: String }], 
+    images: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }], 
     communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }]
 })
 

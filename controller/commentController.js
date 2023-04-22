@@ -36,7 +36,6 @@ exports.AddCommentToPost = [
         if (typeof req.files != 'undefined' && req.files.length > 0) {
             images = req.files.map(img => {
                 return {
-                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
                     data: img.buffer, 
                     contentType: img.mimetype,
                 }
@@ -215,7 +214,7 @@ exports.RemoveLikes = async (req, res) => {
                 console.log("result: ", result)
             })
             .catch(e => {
-                console.log(`AddToLikes error`, e)
+                console.log(`RemoveLikes error`, e)
             })
     } catch (e) {
         console.log(`AddToLikes error`, e)
@@ -240,7 +239,7 @@ exports.EditComment = [
     async (req, res, next) => {
         var errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(404).json({ error: errors.array() })
+            return res.status(404).json({ error: error.errors.array() })
         }
         const obj = {
             content: he.decode(req.body.content),

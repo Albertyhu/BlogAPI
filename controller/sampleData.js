@@ -8,6 +8,7 @@ const SampleComments = require('../sampleData/comments.js');
 const Comment = require('../model/comment.js'); 
 const Category = require('../model/category.js'); 
 const { pickCategoryId } = require('../util/randGen.js')
+const UserPhoto = require("../model/user_photo.js"); 
 
 const PopulateUsers = data => {
     data.forEach( async person => {
@@ -49,6 +50,16 @@ const DeleteAllPost = async () => {
         })
 }
 
+const DeleteAllPhotos = async () => {
+    await UserPhoto.deleteMany({})
+        .then(() => {
+            console.log("All user photos are successfully deleted")
+        })
+        .catch(e => {
+            console.log("DeleteAllPhotos error: ", e)
+        })
+}
+
 const DeletePostsByTitle = async (title) => {
     await Post.deleteMany({ title: title })
         .then(() => {
@@ -62,10 +73,11 @@ const DeletePostsByTitle = async (title) => {
 
 exports.populate = (req, res, next) => {
     async.parallel([
-        //() => { PopulatePosts(SamplePosts) }
-        //() => { PopulateComments(SampleComments)}
-        //() => DeleteAllPost(), 
-        () => { DeletePostsByTitle("How to pet a dog")}
+        //() => { PopulatePosts(SamplePosts) },
+        //() => { PopulateComments(SampleComments)},
+        //() => DeleteAllPost(),
+        //() => { DeletePostsByTitle("How to pet a dog")},
+        () => DeleteAllPhotos(), 
     ],
         function (err, results) {
             if (err) {

@@ -164,7 +164,7 @@ exports.AddReplyToComment = [
                 return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
             }
             console.log("Reply has been successfully added.")
-            res.status(200).json({ comment: reply, author })
+            return res.status(200).json({ comment: reply, author })
         })  
     }
 ] 
@@ -333,10 +333,10 @@ exports.EditComment = [
             ], (error, comment, result, updatedComment) => {
                 if (error) {
                     console.log("EditComment Error 1: ", error)
-                    res.status(400).json({ error: [{param: "general", msg: error}]})
+                    return res.status(400).json({ error: [{param: "general", msg: error}]})
                 }
                 console.log("Comment has been updated: ")
-                res.status(200).json({comment: updatedComment})
+                return res.status(200).json({comment: updatedComment})
             })
         } catch (e) {
              console.log("EditComment error 2: ", e)

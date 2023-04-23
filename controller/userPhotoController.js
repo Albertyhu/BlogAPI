@@ -8,6 +8,7 @@ const he = require('he');
 const bcrypt = require("bcrypt")
 const { BufferImage, findDuplicateNameAndEmail } = dataHooks(); 
 const Comment = require('../model/comment.js'); 
+const async = require('async');
 
 exports.DeletePhoto = async (req, res, next) => {
     await UserPhoto.deleteOne({ _id: req.params.id })
@@ -193,7 +194,7 @@ exports.UploadPhotos = async (req, res, next) => {
     var images = req.files.map(img => {
         const date = Date.now();
         return {
-            title: img.name,
+            title: img.originalname,
             image: {
                 data: img.buffer,
                 contentType: img.mimetype,
@@ -202,41 +203,48 @@ exports.UploadPhotos = async (req, res, next) => {
             owner: req.params.id,
         }
     })
-    async.waterfall([
-        function (callback) {
-            UserPhoto.insertMany(images)
-                .then(savedImages => {
-                    return callabck(null, savedImages)
-                })
-                .catch(error => {
-                    console.log("There was an error creating the images: ", error)
-                    return callback(error)
-                })
-        },
-        function (savedImages, callback) {
-            const imagesId = savedImages.map(img => img._id)
-            User.updateOne({ _id: req.params.id }, {
-                $addToSet: {
-                    images: { $each: imagesId }
-                }
-            }, { new: true })
-                .then(user => {
-                    return (null, savedImages, user)
-                })
-                .catch(error => {
-                    console.log("There was an error updating the user: ", error)
-                    return callback(error)
-                })
-        },
-        (error, savedImages, user) => {
+    console.log("images: ", images)
+    try {
+        async.waterfall([
+            function (callback) {
+                UserPhoto.insertMany(images)
+                    .then(savedImages => {
+                        console.log("Images are saved into the database")
+                        return callback(null, savedImages)
+                    })
+                    .catch(error => {
+                        console.log("There was an error creating the images: ", error)
+                        return callback(error)
+                    })
+            },
+            function (savedImages, callback) {
+                const imagesId = savedImages.map(img => img._id)
+                User.updateOne({ _id: req.params.id }, {
+                    $addToSet: {
+                        images: { $each: imagesId }
+                    }
+                }, { new: true })
+                    .then(user => {
+                        console.log("User is updated.")
+                        return callback(null, savedImages, user)
+                    })
+                    .catch(error => {
+                        console.log("There was an error updating the user: ", error)
+                        return callback(error)
+                    })
+            },
+        ], (error, savedImages, user) => {
             if (error) {
                 console.log("UploadPhotos error: ", error);
-                res.status(400).json({ error: [{ param: "general", msg: error }] })
+                return res.status(400).json({ error: [{ param: "general", msg: error }] })
             }
             console.log("Successfully uploaded photos")
-            res.status(200).json({ savedImages, user })
-        }
-    ])
+            return res.status(200).json({ savedImages, user })
+        })
+    } catch (error) {
+        console.log("UploadPhotos error: ", error)
+        return next(error)
+    }
 }
 
 exports.DeleteManyPhotos = [

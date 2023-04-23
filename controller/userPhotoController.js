@@ -142,3 +142,138 @@ exports.AddComment = [
         })
     }
 ] 
+
+exports.GetUserPhotos = async (req, res, next) => {
+    await UserPhoto.find({ owner: req.params.id })
+        .then(photos => {
+            console.log("User's photos are retrieved.")
+            return res.status(200).json({photos})
+        })
+        .catch(error => {
+            console.log("GetUserPhotos: ", error)
+            return res.status(500).json({error})
+        })
+}
+
+exports.GetOnePhoto = async (req, res, next) => {
+    await UserPhoto.findById(req.params.id)
+        .populate({
+            path: "owner",
+            model: "User",
+        })
+        .populate({
+            path: "comments",
+            model: "Comment", 
+            populate: [
+                {
+                path: "author",
+                model: "User"
+                },
+                {
+                    path: "replies",
+                    model: "Comment",
+                    populate: {
+                        path: 'author',
+                        model: 'User',
+                    }
+                }, 
+            ],
+        })
+        .then(photo => {
+            console.log("Photo is successfully retrieved")
+            res.status(200).json({photo})
+        })
+        .catch(error => {
+            console.log("GetOnePhoto : ", error)
+            return res.status(500).json({ error })
+        })
+}
+
+exports.UploadPhotos = async (req, res, next) => {
+    var images = req.files.map(img => {
+        const date = Date.now();
+        return {
+            title: img.name,
+            image: {
+                data: img.buffer,
+                contentType: img.mimetype,
+            },
+            publishedDate: date,
+            owner: req.params.id,
+        }
+    })
+    async.waterfall([
+        function (callback) {
+            UserPhoto.insertMany(images)
+                .then(savedImages => {
+                    return callabck(null, savedImages)
+                })
+                .catch(error => {
+                    console.log("There was an error creating the images: ", error)
+                    return callback(error)
+                })
+        },
+        function (savedImages, callback) {
+            const imagesId = savedImages.map(img => img._id)
+            User.updateOne({ _id: req.params.id }, {
+                $addToSet: {
+                    images: { $each: imagesId }
+                }
+            }, { new: true })
+                .then(user => {
+                    return (null, savedImages, user)
+                })
+                .catch(error => {
+                    console.log("There was an error updating the user: ", error)
+                    return callback(error)
+                })
+        },
+        (error, savedImages, user) => {
+            if (error) {
+                console.log("UploadPhotos error: ", error);
+                res.status(400).json({ error: [{ param: "general", msg: error }] })
+            }
+            console.log("Successfully uploaded photos")
+            res.status(200).json({ savedImages, user })
+        }
+    ])
+}
+
+exports.DeleteManyPhotos = [
+    body("images"),
+    (req, res, next) => {
+        var error = validationResult(req)
+        if (error) {
+            console.log("DeleteManyPhotos error: ", error)
+            res.status(400).json({ error: error.errors.array() })
+        }
+        var imagesId = JSON.parse(req.body.images)
+        async.parallel([
+            function (callback) {
+                UserPhoto.deleteMany({ _id: imagesId })
+                    .catch(error => {
+                        console.log("There was an error in deleting the photos: ", error)
+                        return callback(error)
+                    })
+            },
+            function (callback) {
+                User.updateOne({ _id: req.params.id }, {
+                    $pull: {
+                        images: { $in: imagesId }
+                    }
+                }, { new: true })
+                    .catch(error => {
+                        console.log("There was an error in updating user after deleting photos: ", error)
+                        return callback(error)
+                    })
+            }
+        ], (error, results) => {
+            if (error) {
+                console.log("DeleteManyPhotos error: ", error);
+                res.status(400).json({ error: [{ param: "general", msg: error }] })
+            }
+            console.log("Successfully deleted photos")
+            res.status(200).json({ results })
+        })
+    }
+]

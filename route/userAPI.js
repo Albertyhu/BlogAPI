@@ -5,6 +5,7 @@ const UserController = require('../controller/userController.js');
 const postController = require('../controller/postController.js');
 const { verifyToken, checkAdmin } = require("../middleware/verifyMember.js");
 const { upload } = require("../middleware/multerSetup.js");
+const UserPhotoController = require("../controller/userPhotoController.js")
 
 router.get('/', cors(), UserController.GetAllUsers)
 
@@ -18,9 +19,11 @@ router.get('/:id', cors(), UserController.GetUser)
 
 router.get('/:id/profilepicture', cors(), UserController.GetUserProfilePicture)
 
-router.post('/:id/upload_photos', cors(), verifyToken, upload.array("images"), UserController.UploadPhotos)
+router.get("/:id/user_photos", cors(), UserPhotoController.GetUserPhotos)
 
-router.delete("/:id/delete_photos", cors(), verifyToken, UserController.DeleteManyPhotos)
+router.put('/:id/upload_photos', cors(), verifyToken, upload.array("images"), UserPhotoController.UploadPhotos)
+
+router.delete("/:id/delete_photos", cors(), verifyToken, UserPhotoController.DeleteManyPhotos)
 
 router.put('/:id/editpassword', cors(), verifyToken, upload.none(), UserController.ChangePassword)
 

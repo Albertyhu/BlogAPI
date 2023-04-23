@@ -71,7 +71,7 @@ app.use('/auth', authRoute);
 app.use('/category', categoryRoute);
 app.use('/tags', tagRoute);
 app.use('/comment', commentRoute);
-app.use('/userPhoto', userPhotoRoute); 
+app.use('/user_photo', userPhotoRoute); 
 
 //This makes sure that the corsOptions are universally applied 
 app.options('*', cors(corsOptions));

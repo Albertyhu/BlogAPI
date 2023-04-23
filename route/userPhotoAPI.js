@@ -6,6 +6,8 @@ const { verifyToken } = require('../middleware/verifyMember.js')
 const UserPhotoController = require("../controller/userPhotoController.js");
 const UserController = require("../controller/userController.js"); 
 
+router.get("/:id", cors(), UserPhotoController.GetOnePhoto); 
+
 router.post("/:id/add_comment", cors(), verifyToken, upload.array("images"), UserPhotoController.AddComment)
 
 router.put("/:id/edit", cors(), verifyToken, upload.none(), UserPhotoController.UpdatePhoto); 

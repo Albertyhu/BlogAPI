@@ -7,8 +7,9 @@
     "\\public",
     "\\public\\uploads",
     "\\route",
+    "\\sampleData",
     "\\util"
   ],
-  "SelectedNode": "\\public\\uploads",
+  "SelectedNode": "\\model\\user.js",
   "PreviewInSolutionExplorer": false
 }

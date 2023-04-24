@@ -23,7 +23,7 @@ router.get("/:id/user_photos", cors(), UserPhotoController.GetUserPhotos)
 
 router.put('/:id/upload_photos', cors(), verifyToken, upload.array("images"), UserPhotoController.UploadPhotos)
 
-router.delete("/:id/delete_photos", cors(), verifyToken, UserPhotoController.DeleteManyPhotos)
+router.put("/:id/delete_photos", cors(), verifyToken, upload.none(), UserPhotoController.DeleteManyPhotos)
 
 router.put('/:id/editpassword', cors(), verifyToken, upload.none(), UserController.ChangePassword)
 

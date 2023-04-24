@@ -247,18 +247,23 @@ exports.UploadPhotos = async (req, res, next) => {
     }
 }
 
+//This function retrieves an array of ObjectId's of the user's photos and delete the photos from the database
+//The user also gets updated 
 exports.DeleteManyPhotos = [
-    body("images"),
+    body("images")
+        .notEmpty()
+        .withMessage("You haven't selected any photos yet."),
     (req, res, next) => {
         var error = validationResult(req)
-        if (error) {
+        if (!error) {
             console.log("DeleteManyPhotos error: ", error)
-            res.status(400).json({ error: error.errors.array() })
+            res.status(400).json({ error: error.array() })
         }
-        var imagesId = JSON.parse(req.body.images)
+        var imagesId = imagesId = JSON.parse(req.body.images)
         async.parallel([
             function (callback) {
                 UserPhoto.deleteMany({ _id: imagesId })
+                    .then(() => { callback(null)})
                     .catch(error => {
                         console.log("There was an error in deleting the photos: ", error)
                         return callback(error)
@@ -270,6 +275,7 @@ exports.DeleteManyPhotos = [
                         images: { $in: imagesId }
                     }
                 }, { new: true })
+                    .then(() => { callback(null) })
                     .catch(error => {
                         console.log("There was an error in updating user after deleting photos: ", error)
                         return callback(error)
@@ -281,7 +287,7 @@ exports.DeleteManyPhotos = [
                 res.status(400).json({ error: [{ param: "general", msg: error }] })
             }
             console.log("Successfully deleted photos")
-            res.status(200).json({ results })
+            res.status(200).json({ results }) 
         })
     }
 ]

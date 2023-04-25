@@ -11,17 +11,65 @@ const { BufferImage, findDuplicateNameAndEmail } = dataHooks();
 const UserPhoto = require('../model/user_photo.js')
 const mongoose =require('mongoose')
 const ObjectId = mongoose.Types.ObjectId;
+const Category = require("../model/category.js");
+const async = require("async")
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
-        var result = await User.find({})
+        await User.find({})
             .sort({ username: 1 })
-            .exec();
-        res.status(200).json(result)
-
+            .exec()
+            .then(users => {
+                return res.status(200).json({ users })
+            })
+            .catch(error => {
+                return res.status(400).json({ error: [{ param: "server", msg: err }] }); 
+            })
     } catch (err){
         return res.status(404).json({ error: [{ param: "server", msg: err }] })
     }
+}
+
+exports.GetUsersAndCategories = (req, res, next) => {
+    async.parallel([
+        function(callback) {
+             User.find({})
+                .sort({ username: 1 })
+                .then((users) => callback(null, users))
+                .catch((error) => {
+                    console.log("There is a problem with retrieving users: ", error)
+                    return callback(error)
+                })
+        },
+        function(callback) {
+             Category.find({})
+                .sort({ name: 1 })
+                .then((categories) => callback(null, categories))
+                .catch((error) => {
+                    console.log("There is a problem with retrieving categories: ", error)
+                    return callback(error)
+                })
+        },
+    ], (error, results) => {
+        
+        if (error) {
+            console.log("GetUsersAndCategories: ", error)
+            return res.status(404).json({ error: [{ param: "server", msg: error }] })    
+        }
+        const [users, categories] = results 
+        const Users = users.map(user => {
+                return {
+                    username: user.username,
+                    email: user.email,
+                    joinedDate: user.joinedDate,  
+                    posts: user.posts,
+                    biography: user.biography,
+                    communitiesFollowed: user.communitiesFollowed,
+                }
+            })
+
+        return res.status(200).json({Users, categories})
+    })
 }
 
 exports.GetUser = async (req, res, next) => {

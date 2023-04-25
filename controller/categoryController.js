@@ -7,11 +7,11 @@ const path = require("path");
 
 const { findDuplicateCategory } = dataHooks(); 
 
-exports.CategoryList = (req, res, next) => {
-    Category.find({})
+exports.CategoryList = async (req, res, next) => {
+    await Category.find({})
         .sort({ name: 1 })
-        .then(response => {
-            res.status(200).json({ categories: response })
+        .then(categories => {
+            return res.status(200).json({categories})
         })
         .catch(e => {
             res.status(404).json({ error: [{param: "Error in retriving list of categogy - ", msg: e}]})

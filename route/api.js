@@ -10,4 +10,6 @@ router.get('/', cors(), (req, res) => {
     res.json({ msg: 'This is CORS-enabled for a Single Route' })
 }); 
 
+router.get("/users_and_categories", cors(), UserController.GetUsersAndCategories); 
+
 module.exports = router;     

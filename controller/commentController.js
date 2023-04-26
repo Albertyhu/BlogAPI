@@ -10,6 +10,7 @@ const { genKey } = require('../util/randGen.js');
 const async = require('async');
 const fs = require('fs')
 const path = require("path")
+const UserPhoto = require("../model/user_photo.js"); 
 
 exports.AddCommentToPost = [
     body("content")
@@ -32,7 +33,6 @@ exports.AddCommentToPost = [
             author: req.body.author,
             post: req.params.id, 
         }
-        console.log("req.files: ", req.files)
         if (typeof req.files != 'undefined' && req.files.length > 0) {
             images = req.files.map(img => {
                 return {
@@ -43,7 +43,6 @@ exports.AddCommentToPost = [
             obj.images = images; 
         }
 
-        //console.log("obj.images: ", obj.images)
         const newComment = new Comment(obj)
 
         async.waterfall([
@@ -78,6 +77,84 @@ exports.AddCommentToPost = [
             }
             console.log("Comment has been successfully added.")
             res.status(200).json({comment, author})
+        })
+    }
+] 
+
+exports.AddCommentToUserPhoto = [
+    body("content")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("You have to write something to post your comment.")
+        .escape(),
+    body("author"),
+    
+    (req, res, next) => {
+        var error = validationResult(req);
+        if (!error.isEmpty()) {
+            console.log("AddComment Error: ", error)
+            return res.status(404).json({ error: error.array() })
+        }
+        console.log("req.body: ", req.body)
+        var obj = {
+            content: he.decode(req.body.content),
+            author: req.body.author,
+            datePublished: Date.now(),
+            userPhoto: req.params.id,
+        }
+        console.log("req.files: ", req.files)
+        if (req.files) {
+            var images = req.files.map(img => {
+                return {
+                    data: img.buffer,
+                    contentType: img.mimetype,
+                }
+            })
+            obj.images = images;
+        }
+        var newComment = new Comment(obj)
+        async.waterfall([
+            function (callback) {
+                newComment.save()
+                    .then(comment => {
+                        console.log("Comment is created: ", comment)
+                        return callback(null, comment)
+                    })
+                    .catch(error => {
+                        console.log("There was an error with creating the new comment: ", error)
+                        return callback(error)
+                    })
+            },
+            function (comment, callback) {
+                UserPhoto.findByIdAndUpdate(req.params.id, {
+                    $addToSet: { comments: comment._id }
+                }, { new: true })
+                    .then(updatedPhoto => {
+                        console.log("Photo has been updated")
+                        return callback(null, comment, updatedPhoto)
+                    })
+                    .catch(error => {
+                        console.log("There was an error with updating the photo: ", error)
+                        return callback(error)
+                    })
+            },
+            function (comment, updatedPhoto, callback) { 
+                User.findOne({ _id: req.body.author })
+                    .then(author => {
+                        console.log("Author information has been retrieved")
+                        return callback(null, comment, updatedPhoto, author)
+                    })
+                    //.catch(error => callback(error))
+            }
+        ], (error, comment, updatedPhoto, author) => {
+            if (error) {
+                console.log("AddComment error: ", error)
+                return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
+            }
+            console.log("comment: ", comment)
+
+            console.log("Comment has been successfully added to the photo")
+            return res.status(200).json({ comment, author })
         })
     }
 ] 
@@ -239,7 +316,7 @@ exports.EditComment = [
     async (req, res, next) => {
         var errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(404).json({ error: error.errors.array() })
+            return res.status(404).json({ error: error.array() })
         }
         const obj = {
             content: he.decode(req.body.content),
@@ -346,71 +423,167 @@ exports.EditComment = [
 ]
 
 //This deletes the comment and all it's replies
-exports.DeleteCompletely = (req, res, next) => {
-    try {
-        async.waterfall([
-        //delete the Comment document
-            function (callback) {
-                Comment.deleteOne({ _id: req.params.id })
-                    .then(comment => {
-                        console.log("Document comment has been deleted: ", comment)
-                        callback(null, comment)
-                    })
-                    .catch(error => {
-                        callback(error) 
-                    })
-            },
-            //delete the replies of the comment 
-            function (comment, callback) {
-                Comment.deleteMany({ commentRepliedTo: req.params.id })
-                    .then(replies => {
-                        console.log("Attempted to delete all replies of the comment")
-                        callback(null, comment)
-                    })
-                    .catch(error => {
-                        callback(error)
-                    })
-            },
-            //remove comment ID from post
-            function (comment, callback) {
-                if (comment.post) {
-                    Post.findByIdandUpdate(comment.post, {
-                        $pull: {comments: req.params.id } 
-                    })
-                        .then(() => {
-                            console.log("Removed comment ObjectId from Post")
-                            callback(null, comment) 
-                        })
-                        .catch(error => {
-                            callback(error) 
-                        })
-                }
-                else
-                    callback(null, comment)
-            },
-            function (comment, callback) {
-                if (comment.commentRepliedTo) {
-                    Comment.findByIdAndUpdate(comment.commentRepliedTo, {
-                        $pull: {replies: req.params.id}
-                    })
-                        .then(() => {
-                            console.log("Removed comment Object Id from comment being replied to.")
+//exports.DeleteCompletely = (req, res, next) => {
+//    try {
+//        async.waterfall([
+//        //delete the Comment document
+//            function (callback) {
+//                Comment.deleteOne({ _id: req.params.id })
+//                    .then(comment => {
+//                        console.log("Document comment has been deleted: ", comment)
+//                        callback(null, comment)
+//                    })
+//                    .catch(error => {
+//                        callback(error)
+//                    })
+//            },
+//            //delete the replies of the comment
+//            function (comment, callback) {
+//                Comment.deleteMany({ commentRepliedTo: req.params.id })
+//                    .then(replies => {
+//                        console.log("Attempted to delete all replies of the comment")
+//                        callback(null, comment)
+//                    })
+//                    .catch(error => {
+//                        callback(error)
+//                    })
+//            },
+//            //remove comment ID from post
+//            function (comment, callback) {
+//                if (comment.post) {
+//                    Post.findByIdandUpdate(comment.post, {
+//                        $pull: {comments: req.params.id }
+//                    })
+//                        .then(() => {
+//                            console.log("Removed comment ObjectId from Post")
+//                            callback(null, comment)
+//                        })
+//                        .catch(error => {
+//                            callback(error)
+//                        })
+//                }
+//                else
+//                    callback(null, comment)
+//            },
+//            function (comment, callback) {
+//                if (comment.commentRepliedTo) {
+//                    Comment.findByIdAndUpdate(comment.commentRepliedTo, {
+//                        $pull: {replies: req.params.id}
+//                    })
+//                        .then(() => {
+//                            console.log("Removed comment Object Id from comment being replied to.")
+//                            callback(null, comment)
+//                        })
+//                    .catch(error => callback(error))
+//                }
+//                else
+//                   callback(null, comment)
+//            }
+//        ], (error, comment) => {
+//            if (error) {
+//                console.log("DeleteCompletely error: ", error)
+//                return res.status(500).json({ error: [{param: "server", msg: "Internal Server Error"}]})
+//            }
+//            console.log("Comment has been completely deleted.")
+//            return res.status(200).json({ message: [{param: "general", msg: "Your comment is successfully deleted."}]})
+//        })
+//    } catch (e) {
+//        console.log("DeleteCompletely error: ", e)
+//    }
+//}
+
+
+exports.DeleteCompletely = [
+    body("rootId"),
+    body("rootType"), 
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            console.log("DeleteCompletely error: ", errors.array())
+            return res.status(500).json({ error: errors.array() })
+        }
+        try {
+            const rootId = req.body.rootId;
+            const rootType = req.body.rootType;
+            async.waterfall([
+                //delete the Comment document
+                function (callback) {
+                    Comment.deleteOne({ _id: req.params.id })
+                        .then(comment => {
+                            console.log("Document comment has been deleted: ", comment)
                             callback(null, comment)
                         })
-                    .catch(error => callback(error))
+                        .catch(error => {
+                            callback(error)
+                        })
+                },
+                //delete the replies of the comment 
+                function (comment, callback) {
+                    Comment.deleteMany({ commentRepliedTo: req.params.id })
+                        .then(replies => {
+                            console.log("Attempted to delete all replies of the comment")
+                            callback(null, comment)
+                        })
+                        .catch(error => {
+                            callback(error)
+                        })
+                },
+                //remove comment ID from post
+                function (comment, callback) {
+                    if (typeof comment.post != 'undefined' && comment.post != null && comment.post != "") {
+                        Post.findByIdandUpdate(comment.post, {
+                            $pull: { comments: req.params.id }
+                        })
+                            .then(() => {
+                                console.log("Removed comment ObjectId from Post")
+                                callback(null, comment)
+                            })
+                            .catch(error => {
+                                callback(error)
+                            })
+                    }
+                    else if (typeof comment.userPhoto != 'undefined' && comment.userPhoto != null && comment.userPhoto != "") {
+                        UserPhoto.findByIdAndUpdate(comment.userPhoto, {
+                            $pull: { comments: req.params.id }
+                        })
+                            .then(() => {
+                                console.log("Removed comment ObjectId from user's photo")
+                                callback(null, comment)
+                            })
+                            .catch(error => {
+                                callback(error)
+                            })
+                    }
+                    else
+                        callback(null, comment)
+                },
+                function (comment, callback) {
+                    if (comment.commentRepliedTo) {
+                        Comment.findByIdAndUpdate(comment.commentRepliedTo, {
+                            $pull: { replies: req.params.id }
+                        })
+                            .then(() => {
+                                console.log("Removed comment Object Id from comment being replied to.")
+                                callback(null, comment)
+                            })
+                            .catch(error => callback(error))
+                    }
+                    else
+                        callback(null, comment)
                 }
-                else
-                   callback(null, comment)
-            }
-        ], (error, comment) => {
-            if (error) {
-                console.log("DeleteCompletely error: ", error)
-                return res.status(500).json({ error: [{param: "server", msg: "Internal Server Error"}]})
-            }
-            console.log("Comment has been completely deleted.")
-            return res.status(200).json({ message: [{param: "general", msg: "Your comment is successfully deleted."}]})
-        })
-    } catch (e) {
-        console.log("DeleteCompletely error: ", e)
+            ], (error, comment) => {
+                if (error) {
+                    console.log("DeleteCompletely error: ", error)
+                    return res.status(500).json({ error: [{ param: "server", msg: "Internal Server Error" }] })
+                }
+                console.log("Comment has been completely deleted.")
+                return res.status(200).json({ message: [{ param: "general", msg: "Your comment is successfully deleted." }] })
+            })
+        }
+        catch (e) {
+            console.log("DeleteCompletely error: ", e)
+        }
     }
-}
+]
+
+    

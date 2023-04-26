@@ -26,9 +26,9 @@ exports.UpdatePhoto = [
     body("caption"), 
     async (req, res, next) => {
         var error = validationResult(req); 
-        if (error) {
+        if (!error.isEmpty()) {
             console.log("UpdatePhoto error: ", error)
-            res.status(400).json({error: error.errors.array()})
+            res.status(400).json({error: error.array()})
         }
         await UserPhoto.updateOne({ _id: req.params.id }, {
             title: he.decode(req.body.title),
@@ -85,19 +85,26 @@ exports.RemoveLike = async (req, res, next) => {
 }
 
 exports.AddComment = [
-    body("content"), 
+    body("content")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("You have to write something to post your comment.")
+        .escape(),  
     body("author"), 
     (req, res, next) => {
         var error = validationResult(req); 
-        if (error) {
+        if (!error.isEmpty()) {
             console.log("AddComment Error: ", error)
-            return res.status(404).json({ error: error.errors.array() })
+            return res.status(404).json({ error: error.array() })
         }
+        console.log("req.body: ", req.body)
         var obj = {
-            comment: he.decode(req.body.comment), 
+            content: he.decode(req.body.content), 
             author: req.body.author,
             datePublished: Date.now(), 
+            userPhoto: req.params.id, 
         } 
+        console.log("req.files: ", req.files)
         if (req.files) {
             var images = req.files.map(img => {
                 return {
@@ -107,12 +114,12 @@ exports.AddComment = [
             })
             obj.images = images; 
         }
+        var newDoc = new Comment(obj)
         async.waterfall([
             function (callback) {
-                var newDoc = new Comment(obj)
                 newDoc.save()
                     .then(newComment => {
-                        console.log("Comment is created")
+                        console.log("Comment is created: ", newComment)
                         return callback(null, newComment)
                     })
                     .catch(error => {
@@ -121,25 +128,33 @@ exports.AddComment = [
                     })
             },
             function (newComment, callback) {
-                UserPhoto.updateOne({ _id: req.params.id }, {
+                UserPhoto.findByIdAndUpdate(req.params.id, {
                     $addToSet: {comments: newComment._id}
                 }, { new: true })
                     .then(updatedPhoto => {
-                        console.log("Photo has been updated.")
+                        console.log("Photo has been updated")
                         return(null, newComment, updatedPhoto)
                     })
                     .catch(error => {
                         console.log("There was an error with updating the photo: ", error)
                         return callback(error)
                     })
+            },
+            function (newComment, updatedPhoto, callback) {
+                User.findOne({ _id: req.body.author })
+                    .then(author => {
+                        console.log("Author information has been retrieved")
+                        return callback(null, newComment, updatedPhoto, author)
+                    })
+                    .catch(error => callback(error))
             }
-        ], (error, newComment, updatedPhoto) => {
+        ], (error, newComment, updatedPhoto, author) => {
             if (error) {
                 console.log("AddComment error: ", error)
                 return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
             }
             console.log("Comment has been successfully added to the photo")
-            return res.status(200).json({newComment, updatedPhoto})
+            return res.status(200).json({newComment, updatedPhoto, author})
         })
     }
 ] 
@@ -255,7 +270,7 @@ exports.DeleteManyPhotos = [
         .withMessage("You haven't selected any photos yet."),
     (req, res, next) => {
         var error = validationResult(req)
-        if (!error) {
+        if (!error.isEmpty()) {
             console.log("DeleteManyPhotos error: ", error)
             res.status(400).json({ error: error.array() })
         }

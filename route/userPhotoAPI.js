@@ -5,10 +5,11 @@ const { upload } = require('../middleware/multerSetup.js');
 const { verifyToken } = require('../middleware/verifyMember.js')
 const UserPhotoController = require("../controller/userPhotoController.js");
 const UserController = require("../controller/userController.js"); 
+const CommentController = require("../controller/commentController.js"); 
 
 router.get("/:id", cors(), UserPhotoController.GetOnePhoto); 
 
-router.post("/:id/add_comment", cors(), verifyToken, upload.array("images"), UserPhotoController.AddComment)
+router.post("/:id/add_comment", cors(), verifyToken, upload.array("images"), CommentController.AddCommentToUserPhoto);
 
 router.put("/:id/edit", cors(), verifyToken, upload.none(), UserPhotoController.UpdatePhoto); 
 

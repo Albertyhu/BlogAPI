@@ -22,26 +22,33 @@ exports.DeletePhoto = async (req, res, next) => {
 } 
 
 exports.UpdatePhoto = [
-    body("title"), 
-    body("caption"), 
+    body("title")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("Your title cannot be empty")
+        .escape(),
+    body("caption")
+        .trim()
+        .escape(), 
     async (req, res, next) => {
         var error = validationResult(req); 
         if (!error.isEmpty()) {
-            console.log("UpdatePhoto error: ", error)
+            console.log("UpdatePhoto error 1: ", error)
             res.status(400).json({error: error.array()})
         }
+        const lastEdited = Date.now(); 
         await UserPhoto.updateOne({ _id: req.params.id }, {
             title: he.decode(req.body.title),
-            lastEdited: Date.now(), 
+            lastEdited, 
             caption: he.decode(req.body.caption),
         }, { new: true })
             .then(updatedPhoto => {
                 console.log("The photo is updated.")
-                res.status(200).json({updatedPhoto})
+                res.status(200).json({lastEdited})
             })
             .catch(error => {
-                console.log("UpdatePhoto error: ", error)
-                res.status(400).json({error})
+                console.log("UpdatePhoto error 2: ", error)
+                res.status(400).json({ error: [{ param: "server", msg: "Something went wrong with the server." }] })
             })
     }
 ] 

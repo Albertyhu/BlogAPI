@@ -68,7 +68,7 @@ exports.AddCommentToPost = [
             function (comment, post, callback) {
                 User.findOne({_id: req.body.author})
                     .then(author => callback(null, comment, post, author))
-                    //.catch(error => callback(error))
+                    .catch(error => callback(error))
             }
         ], (err, comment, post, author) => {
             if (err) { 
@@ -143,16 +143,15 @@ exports.AddCommentToUserPhoto = [
                     .then(author => {
                         console.log("Author information has been retrieved")
                         return callback(null, comment, updatedPhoto, author)
+                         
                     })
-                    //.catch(error => callback(error))
+                    .catch(error => callback(error))
             }
         ], (error, comment, updatedPhoto, author) => {
             if (error) {
                 console.log("AddComment error: ", error)
                 return res.status(400).json({ error: [{ param: 'general', msg: 'Bad client request' }] })
             }
-            console.log("comment: ", comment)
-
             console.log("Comment has been successfully added to the photo")
             return res.status(200).json({ comment, author })
         })

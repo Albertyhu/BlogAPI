@@ -17,6 +17,8 @@ router.get('/:authorId/posts/:postId', cors(), postController.GetOnePostByAuthor
 
 router.get('/:id', cors(), UserController.GetUser)
 
+router.get('/:id/get_current_user_and_categories', cors(), verifyToken, UserController.GetCurrentUserAndCategories)
+
 router.get('/:id/profilepicture', cors(), UserController.GetUserProfilePicture)
 
 router.get("/:id/user_photos", cors(), UserPhotoController.GetUserPhotos)
@@ -32,5 +34,7 @@ router.put('/:id/uploadnewpicture', cors(), verifyToken, upload.single("profile_
 router.put('/:id/update_user_profile', cors(), verifyToken, upload.single("profile_pic"), UserController.UpdateUserProfile)
 
 router.delete('/:id/delete', cors(), UserController.DeleteUser)
+
+router.delete('/:id/delete_with_password', cors(), UserController.DeleteUserWithPassword)
 
 module.exports = router;     

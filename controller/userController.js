@@ -30,6 +30,46 @@ exports.GetAllUsers = async (req, res, next) => {
     }
 }
 
+exports.GetCurrentUserAndCategories = (req, res, next) => {
+    async.parallel({
+        GetUser(callback) {
+            User.findById(req.params.id)
+                .then(result => {
+                    callback(null, result)
+                })
+                .catch(error => {
+                    console.log("There is a problem with retrieving the current user: ", error)
+                    callback(error)
+                })
+        },
+        GetCategories(callback) {
+            Category.find({})
+                .sort({ name: 1 })
+                .then((categories) => callback(null, categories))
+                .catch((error) => {
+                    console.log("There is a problem with retrieving categories: ", error)
+                    callback(error)
+                })
+        }
+    }, (error, result) => {
+        if (error) {
+            res.status(400).json({error: error})
+        }
+        var user = {
+            username: result.GetUser.username,
+            email: result.GetUser.email,
+            joinedDate: result.GetUser.joinedDate,
+            posts: result.GetUser.posts,
+            profile_pic: result.GetUser.profile_pic,
+            biography: result.GetUser.biography,
+            SocialMediaLinks: result.GetUser.SocialMediaLinks,
+            communitiesFollowed: result.GetUser.communitiesFollowed, 
+        }
+        const categories = result.GetCategeories;
+        res.status(200).json({categories, user})
+    })
+}
+
 exports.GetUsersAndCategories = (req, res, next) => {
     async.parallel([
         function(callback) {
@@ -298,5 +338,42 @@ exports.DeleteUser = async (req, res, next) => {
         })
 
 }
+
+exports.DeleteUserWithPassword = [
+    body("currentPassword")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("The password field cannot be empty.")
+        .escape(),
+    body("confirmPassword")
+        .trim()
+        .isLength({ min: 1 })
+        .withMessage("You must type your password again.")
+        .custom((val, { req }) => {
+            if (val != req.body.currentPassword) {
+                throw new Error("Your passwords do not match.")
+            }
+            return true
+        }),
+    async (req, res, next) => {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            console.log("DeleteUserWithPassword: ", errors.array())
+            res.status(404).json({ error: errors.array() })
+        }
+        console.log("Deleting user")
+        await User.deleteOne({ _id: req.params.id })
+            .then(result => {
+                console.log("User has successfully been deleted.")
+                res.status(200).json({ message: "User has been deleted" });
+            })
+            .catch(e => {
+                console.log("Error in deleting user: ", e)
+                res.status(500).json({ message: "Internal service error", error: e.message });
+            })
+    }
+]
+
+
 
 

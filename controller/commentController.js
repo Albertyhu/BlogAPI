@@ -88,7 +88,6 @@ exports.AddCommentToUserPhoto = [
         .withMessage("You have to write something to post your comment.")
         .escape(),
     body("author"),
-    
     (req, res, next) => {
         var error = validationResult(req);
         if (!error.isEmpty()) {
@@ -170,6 +169,7 @@ exports.AddReplyToComment = [
     body("userRepliedTo"), 
     body("commentRepliedTo"), 
     body("postId"), 
+    body("userPhotoId"), 
     body("root"),
     (req, res, next) => {
         const errors = validationResult(req);
@@ -185,7 +185,8 @@ exports.AddReplyToComment = [
             author: req.body.author,
             commentRepliedTo: req.body.commentRepliedTo,
             rootComment: req.params.id, 
-            post: req.body.postId, 
+            post: req.body.postId ? req.body.postId : null, 
+            userPhoto: req.body.userPhotoId ? req.body.userPhotoId : null, 
             userRepliedTo: req.body.userRepliedTo, 
         }
         if (typeof req.files != 'undefined' && req.files.length > 0) {

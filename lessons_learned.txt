@@ -1,0 +1,5 @@
+LESSONS LEARNEED FROM BUILDING THE APP
+
+* Make it easier to delete comments and replies: 
+	Every comment and reply document should have the ObjectId of the article or post that it belongs to.
+	Thus, when the post is deleted, just <Model>.deleteMany({post: postId}) to delete all the comments and replies in one momment. 

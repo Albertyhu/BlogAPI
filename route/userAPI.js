@@ -37,4 +37,6 @@ router.delete('/:id/delete', cors(), UserController.DeleteUser)
 
 router.delete('/:id/delete_with_password', cors(), UserController.DeleteUserWithPassword)
 
+router.get("/:id/fetch_user", cors(), UserController.GetUserByName)
+
 module.exports = router;     

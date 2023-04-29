@@ -16,7 +16,10 @@ const User = new Schema({
         link: { type: String }
     }],
     images: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }], 
-    communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }]
+    communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }],
+    //Other users that the current user is connected to. This is similar to the friend feature on Facebook.
+    connection: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }],
+    pendingConnections: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }],
 })
 
 User.virtual("formatted_JoinedDate").get(function () {

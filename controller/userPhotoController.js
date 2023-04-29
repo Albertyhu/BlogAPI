@@ -9,17 +9,56 @@ const bcrypt = require("bcrypt")
 const { BufferImage, findDuplicateNameAndEmail } = dataHooks(); 
 const Comment = require('../model/comment.js'); 
 const async = require('async');
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
-exports.DeletePhoto = async (req, res, next) => {
-    await UserPhoto.deleteOne({ _id: req.params.id })
-        .then(result => {
-            res.status(200).json({message: "The photo has been deleted."})
+exports.DeletePhoto = [
+    body("owner"),
+    (req, res, next) => {
+        async.parallel([
+            function(callback) {
+                UserPhoto.deleteOne({ _id: req.params.id })
+                    .then((result) => {
+                        callback(null)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem deleting the photo: ", error)
+                        callback(error)
+                    })
+            },
+            function(callback) {
+                User.findByIdAndUpdate(req.body.owner, {
+                    $pull: {
+                        images: req.params.id, 
+                    }
+                })
+                    .then(() => {
+                        callback(null)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem deleting ObjectId from the owner's array: ", error)
+                        callback(error)
+                    })
+            },
+            function (callback) {
+                Comment.deleteMany({ userPhoto: req.params.id })
+                    .then(() => {
+                        callback(null)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem deleting the comments and replies: ", error)
+                        callback(error)
+                    })
+            }
+        ], (error) => {
+            if (error) {
+                console.log("DeletePhoto error: ", error)
+                res.status(500).json({error})
+            }
+            res.status(200).json({message: "Photo was deleted."})
         })
-        .catch(error => {
-            console.log("DeletePhoto error: ", error)
-            res.status(400).json({ error: [{msg: error, param: "general"}] })
-        })
-} 
+    } 
+]
 
 exports.UpdatePhoto = [
     body("title")
@@ -166,16 +205,41 @@ exports.AddComment = [
     }
 ] 
 
+//To get the user's photos, it's necessary to retrieve his objectId first
 exports.GetUserPhotos = async (req, res, next) => {
-    await UserPhoto.find({ owner: req.params.id })
-        .then(photos => {
-            console.log("User's photos are retrieved.")
-            return res.status(200).json({photos})
-        })
-        .catch(error => {
+    async.waterfall([
+        //Get user by name
+        function (callback) {
+            User.findOne({ username: req.params.id })
+                .then(user => {
+                    console.log("User has been retrieved")
+                    const userId = user._id; 
+                    callback(null, userId)
+                })
+                .catch(error => {
+                    console.log("There was a problem with retrieving the user: ", error)
+                    callback(error)
+                })
+        },
+        function (userId, callback) {
+            UserPhoto.find({ owner: userId })
+                .then(userPhotos => {
+                    console.log("Photos have been retrieved.")
+                    callback(null, userId, userPhotos)
+                })
+                .catch(error => {
+                    console.log("There was a problem with retrieving the user's photos: ", error)
+                    callback(error)
+                })
+        }
+    ], (error, userId, userPhotos) => {
+        if (error) {
             console.log("GetUserPhotos: ", error)
-            return res.status(500).json({error})
-        })
+            return res.status(500).json({ error })
+        }
+        console.log("GetUserPhotos operation is successful.")
+        return res.status(200).json({ photos: userPhotos, userId })
+    })
 }
 
 exports.GetOnePhoto = async (req, res, next) => {
@@ -186,7 +250,7 @@ exports.GetOnePhoto = async (req, res, next) => {
         })
         .populate({
             path: "comments",
-            model: "Comment", 
+            model: "Comment",
             populate: [
                 {
                 path: "author",
@@ -199,7 +263,7 @@ exports.GetOnePhoto = async (req, res, next) => {
                         path: 'author',
                         model: 'User',
                     }
-                }, 
+                },
             ],
         })
         .then(photo => {
@@ -283,14 +347,25 @@ exports.DeleteManyPhotos = [
         }
         var imagesId = imagesId = JSON.parse(req.body.images)
         async.parallel([
+         //Delete the photos with the imagesId array
             function (callback) {
                 UserPhoto.deleteMany({ _id: imagesId })
                     .then(() => { callback(null)})
                     .catch(error => {
                         console.log("There was an error in deleting the photos: ", error)
-                        return callback(error)
+                        callback(error)
                     })
             },
+            //function to delete the comments as well. 
+            function (callback) {
+                Comment.deleteMany({ userPhoto: imagesId })
+                    .then(() => { callback(null) })
+                    .catch(error => {
+                        console.log("There was an error in deleting the comments: ", error)
+                        callback(error)
+                    })
+            },
+            //Update current User's document
             function (callback) {
                 User.updateOne({ _id: req.params.id }, {
                     $pull: {
@@ -300,9 +375,9 @@ exports.DeleteManyPhotos = [
                     .then(() => { callback(null) })
                     .catch(error => {
                         console.log("There was an error in updating user after deleting photos: ", error)
-                        return callback(error)
+                        callback(error)
                     })
-            }
+            },
         ], (error, results) => {
             if (error) {
                 console.log("DeleteManyPhotos error: ", error);

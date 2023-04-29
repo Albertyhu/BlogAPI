@@ -26,6 +26,7 @@ const Comment = new Schema({
     //This refers to the post that the comment belongs to 
     post: { type: Schema.Types.ObjectId, ref: "Post" },
 
+    //If the comment is a reply to a user's photo, this field keeps track of the objectId of the photo, the post field should be empty.
     userPhoto: { type: Schema.Types.ObjectId, ref: "UserPhoto" }, 
 })
 

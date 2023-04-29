@@ -5,6 +5,8 @@ const Schema = mongoose.Schema;
 
 const Post = new Schema({
     title: { type: String, required: true },
+    //urlTitle is the tile of the post without any punctuation marks
+    urlTitle: {type: String, required: true}, 
     content: { type: String },
     published: {type: Boolean}, 
     datePublished: { type: Date },

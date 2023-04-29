@@ -19,7 +19,18 @@ const User = new Schema({
     communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }],
     //Other users that the current user is connected to. This is similar to the friend feature on Facebook.
     connection: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }],
-    pendingConnections: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }],
+    //pendingRequestSent: [{ type: Schema.Types.ObjectId, ref: "ConnectionReqest" }],
+    //pendintRequestReceived: [{ type: Schema.Types.ObjectId, ref: "ConnectionReqest" }],
+    //notification will be in the form of messages
+    notifications: [{
+        message: { type: String },
+        sender: { type: Schema.Types.ObjectId, ref: "User" }, 
+        action: {type: String}, 
+    }], 
+    message: [{
+        message: { type: String },
+        sender: { type: Schema.Types.ObjectId, ref: "User" }
+    }]
 })
 
 User.virtual("formatted_JoinedDate").get(function () {

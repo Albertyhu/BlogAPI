@@ -12,7 +12,8 @@ const UserPhoto = require('../model/user_photo.js')
 const mongoose =require('mongoose')
 const ObjectId = mongoose.Types.ObjectId;
 const Category = require("../model/category.js");
-const async = require("async")
+const async = require("async"); 
+const ConnectionRequest = require('../model/connection_request.js'); 
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
@@ -406,4 +407,112 @@ exports.GetUserByName = async (req, res, next) => {
         console.log("GetUserByName error 2: ", error)
         return res.status(404).json({ error: `Error in fetching user: ${error}` })
     }
+}
+
+exports.SendConnectionRequest = [
+    body("senderId"),
+    body("message")
+        .trim()
+        .escape(),
+    async (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            console.log("SendConnectionRequest error 1: ", errors.array())
+            res.status(400).json({error: errors.array()})
+        }
+        const obj = {
+            sender: req.body.senderId,
+            receiver: req.params.id,
+            message: he.decode(req.body.message),
+            dateSent: Date.now(), 
+        } 
+        const newRequest = new ConnectionRequest(obj)
+        await newRequest.save()
+            .then(result => {
+                res.status(200).json({})
+            })
+            .catch(error => {
+                console.log("SendConnectionRequest error 1: ", error)
+                res.status(400).json({ error})
+            })
+    }
+]
+
+exports.HandleConnectionRequest = [
+    body("accept"),
+    body("senderId"),
+    body("receiverId"), 
+    async.parallel([
+        function () {
+            ConnectionRequest.deleteOne({ _id: req.params.id })
+                .then(() => callback(null))
+                .catch(error => {
+                    console.log("HandleConnectionRequest Error: ", error)
+                    callback(error)
+                })
+        },
+        function () {
+            if (req.body.accept) {
+                User.findByIdAndUpdate(req.body.senderId, {
+                    $addToSet: {connection: req.body.receiverId},
+                })
+                    .then(() => callback(null))
+                    .catch(error => {
+                        console.log("There was an error addeding the receiver as a connection to the sender: ", error)
+                        callback(error)
+                    })
+            }
+        },
+        function () {
+            if (req.body.accept) {
+                User.findByIdAndUpdate(req.body.receiverId, {
+                    $addToSet: { connection: req.body.senderId },
+                })
+                    .then(() => callback(null))
+                    .catch(error => {
+                        console.log("There was an error addeding the sender as a connection to receiver: ", error)
+                        callback(error)
+                    })
+            }
+        }
+    ], (error) => {
+        if (error) {
+            console.log("HandleConnectionRequest Error: ", error)
+            return res.status(500).json({error})
+        }
+        res.status(200).json({})
+    })
+]
+
+exports.RetrieveConnectionRequests = (req, res, next) => {
+    async.parallel([
+        GetSent(callback) {
+            ConnectionRequest.find({ sender: req.params.id })
+                .populate("receiver")
+                .then(sent => {
+                    callback(null, sent)
+                })
+                .catch(error => {
+                    console.log("There was an error retrieving sent requests: ", error)
+                    callback(error)
+                })
+        },
+        GetReceived(callback) {
+            ConnectionRequest.find({ receiver: req.params.id })
+                .populate("sender")
+                .then(received => {
+                    callback(null, received)
+                })
+                .catch(error => {
+                    console.log("There was an error retrieving received requests: ", error)
+                    callback(error)
+                })
+        }
+    ], (error, result) => {
+        if (error) {
+            console.log("RetrieveConnectionRequests Error: ", error)
+            return res.status(500).json({ error })
+        }
+        res.status(200).json({sent: result.GetSent, received: result.GetReceived})
+    })
 }

@@ -11,6 +11,8 @@ router.get("/", cors(), categoryController.CategoryList);
 
 router.post("/create", cors(), verifyToken, upload.single("image"), categoryController.CreateCategory);
 
+router.get("/get_paginated_categories/:page/:count", cors(), categoryController.GetPaginatedCategories)
+
 router.get("/:id", cors(), categoryController.FindOneCategory)
 
 router.put("/:id/edit", cors(), verifyToken, upload.single("image"), categoryController.EditCategory);

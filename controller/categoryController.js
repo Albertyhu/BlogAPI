@@ -163,3 +163,32 @@ exports.DeleteCategory = async (req, res, next) => {
             res.status(404).json({ error: [{ param: "Category is not found", msg: e }] })
         })
 }
+
+exports.GetPaginatedCategories = async (req, res, next) => {
+    const error = [];
+    var COUNT
+    var PAGINATION
+    try {
+        COUNT = parseInt(req.params.count);
+        PAGINATION = parseInt(req.params.page)
+    } catch (e) {
+        error.push(e)
+    }
+    if (error.length > 0) {
+        console.log("GetPaginatedCategories error: ", error)
+        return res.status(400).json({ error })
+    }
+
+    await Category.find({ published: true })
+        .then(categories => {
+
+            const start = PAGINATION * COUNT;
+            const end = start + COUNT - 1;
+            var paginatedResult = categories.slice(start, end)
+            return res.status(200).json({ paginatedResult })
+        })
+        .catch(error => {
+            console.log("GetPaginatedCategoriest error: ", error)
+            return res.status(500).json({ error })
+        })
+}

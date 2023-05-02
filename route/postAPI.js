@@ -15,9 +15,7 @@ router.post("/create", cors(), verifyToken, upload.fields([
 
 router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPostsByCategory);
 
-/*router.get("/get_newest_posts_by_pagination", cors(), postController.GetAllPostByNewest);*/
-
-router.get("/get_newest_posts/:pagination/:count", cors(), postController.GetAllPostByNewest);
+router.get("/get_newest_posts/:page/:count", cors(), postController.GetAllPostByNewest);
 
 router.get('/:id', cors(), postController.FindOnePost)
 

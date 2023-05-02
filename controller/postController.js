@@ -571,7 +571,7 @@ exports.GetAllPostByNewest = async (req, res, next) => {
     var PAGINATION 
     try {
         COUNT = parseInt(req.params.count);
-        PAGINATION = parseInt(req.params.pagination)
+        PAGINATION = parseInt(req.params.page)
     } catch (e) {
         error.push(e)
     }
@@ -589,7 +589,7 @@ exports.GetAllPostByNewest = async (req, res, next) => {
             const start = PAGINATION * COUNT;
             const end = start + COUNT - 1;
             var paginatedResult = postList.slice(start, end)
-            return res.status(200).json({ paginatedResult, PostListSize: postList.length })
+            return res.status(200).json({ paginatedResult })
         })
         .catch(error => {
             console.log("GetAllPostByNewest error: ", error)

@@ -15,6 +15,7 @@ const User = new Schema({
         platform: { type: String },
         link: { type: String }
     }],
+    coverPhoto: { data: Buffer, contentType: String },
     images: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }], 
     communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }],
     //Other users that the current user is connected to. This is similar to the friend feature on Facebook.

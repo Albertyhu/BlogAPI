@@ -94,9 +94,9 @@ exports.UpdatePhoto = [
 
 exports.AddLike = async (req, res, next) => {
     try {
-        var userId = req.body.userId; 
+        var userID = req.body.userID; 
         await UserPhoto.updateOne({ _id: req.params.id }, {
-            $addToSet: {likes: userId}
+            $addToSet: { likes: userID }
         })
             .then(result => {
                 console.log("like is added: ", result)
@@ -113,9 +113,9 @@ exports.AddLike = async (req, res, next) => {
 
 exports.RemoveLike = async (req, res, next) => {
     try {
-        var userId = req.body.userId;
+        var userID = req.body.userID;
         await UserPhoto.updateOne({ _id: req.params.id }, {
-            $pull: { likes: userId }
+            $pull: { likes: userID }
         })
             .then(result => {
                 console.log("Like is removed: ", result)

@@ -442,50 +442,52 @@ exports.HandleConnectionRequest = [
     body("accept"),
     body("senderId"),
     body("receiverId"), 
-    async.parallel([
-        function () {
-            ConnectionRequest.deleteOne({ _id: req.params.id })
-                .then(() => callback(null))
-                .catch(error => {
-                    console.log("HandleConnectionRequest Error: ", error)
-                    callback(error)
-                })
-        },
-        function () {
-            if (req.body.accept) {
-                User.findByIdAndUpdate(req.body.senderId, {
-                    $addToSet: {connection: req.body.receiverId},
-                })
+    (req, res, next) => {
+        async.parallel([
+            function () {
+                ConnectionRequest.deleteOne({ _id: req.params.id })
                     .then(() => callback(null))
                     .catch(error => {
-                        console.log("There was an error addeding the receiver as a connection to the sender: ", error)
+                        console.log("HandleConnectionRequest Error: ", error)
                         callback(error)
                     })
-            }
-        },
-        function () {
-            if (req.body.accept) {
-                User.findByIdAndUpdate(req.body.receiverId, {
-                    $addToSet: { connection: req.body.senderId },
-                })
-                    .then(() => callback(null))
-                    .catch(error => {
-                        console.log("There was an error addeding the sender as a connection to receiver: ", error)
-                        callback(error)
+            },
+            function () {
+                if (req.body.accept) {
+                    User.findByIdAndUpdate(req.body.senderId, {
+                        $addToSet: { connection: req.body.receiverId },
                     })
+                        .then(() => callback(null))
+                        .catch(error => {
+                            console.log("There was an error addeding the receiver as a connection to the sender: ", error)
+                            callback(error)
+                        })
+                }
+            },
+            function () {
+                if (req.body.accept) {
+                    User.findByIdAndUpdate(req.body.receiverId, {
+                        $addToSet: { connection: req.body.senderId },
+                    })
+                        .then(() => callback(null))
+                        .catch(error => {
+                            console.log("There was an error addeding the sender as a connection to receiver: ", error)
+                            callback(error)
+                        })
+                }
             }
-        }
-    ], (error) => {
-        if (error) {
-            console.log("HandleConnectionRequest Error: ", error)
-            return res.status(500).json({error})
-        }
-        res.status(200).json({})
-    })
+        ], (error) => {
+            if (error) {
+                console.log("HandleConnectionRequest Error: ", error)
+                return res.status(500).json({ error })
+            }
+            res.status(200).json({})
+        })
+    }
 ]
 
 exports.RetrieveConnectionRequests = (req, res, next) => {
-    async.parallel([
+    async.parallel({
         GetSent(callback) {
             ConnectionRequest.find({ sender: req.params.id })
                 .populate("receiver")
@@ -508,7 +510,7 @@ exports.RetrieveConnectionRequests = (req, res, next) => {
                     callback(error)
                 })
         }
-    ], (error, result) => {
+    }, (error, result) => {
         if (error) {
             console.log("RetrieveConnectionRequests Error: ", error)
             return res.status(500).json({ error })

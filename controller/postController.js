@@ -564,3 +564,35 @@ exports.EditPost = [
         }
     }
 ]
+
+exports.GetAllPostByNewest = async (req, res, next) => {
+    const error = []; 
+    var COUNT 
+    var PAGINATION 
+    try {
+        COUNT = parseInt(req.params.count);
+        PAGINATION = parseInt(req.params.pagination)
+    } catch (e) {
+        error.push(e)
+    }
+    if(error.length > 0) {
+        console.log("GetAllPostByNewest error: ", error)
+        return res.status(400).json({ error})
+    }
+
+    await Post.find({ published: true })
+        .sort({ datePublished: -1 })
+        .populate("author")
+        .populate("tag")
+        .then(postList => {
+
+            const start = PAGINATION * COUNT;
+            const end = start + COUNT - 1;
+            var paginatedResult = postList.slice(start, end)
+            return res.status(200).json({ paginatedResult, PostListSize: postList.length })
+        })
+        .catch(error => {
+            console.log("GetAllPostByNewest error: ", error)
+            return res.status(500).json({ error })
+        })
+}

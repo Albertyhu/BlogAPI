@@ -4,14 +4,6 @@ const User = require("../model/user");
 const Category = require("../model/category"); 
 
 const dataHooks = () => {
-    const BufferImage = (File) => {
-        return {
-            //data: fs.readFileSync(path.join(__dirname, '../public/uploads/', File.filename)),
-            data: File.buffer, 
-            contentType: File.mimetype,
-        }
-    }
-
     const TestFunction = () => {
         console.log("This works")
         return "This works"; 
@@ -78,7 +70,6 @@ const dataHooks = () => {
     
 
     return {
-        BufferImage,
         TestFunction,
         findDuplicateNameAndEmail,
         findDuplicateCategory,

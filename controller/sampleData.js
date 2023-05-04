@@ -43,6 +43,8 @@ const PopulateComments = async (data) => {
         })
 }
 
+
+
 const DeleteAllPost = async () => {
     await Post.deleteMany({})
         .then(() => {
@@ -73,11 +75,11 @@ const DeletePostsByTitle = async (title) => {
 
 exports.populate = (req, res, next) => {
     async.parallel([
-        //() => { PopulatePosts(SamplePosts) },
+        () => { PopulatePosts(SamplePosts) },
         //() => { PopulateComments(SampleComments)},
-        //() => DeleteAllPost(),
+        // () => DeleteAllPost(),
         //() => { DeletePostsByTitle("How to pet a dog")},
-        () => DeleteAllPhotos(), 
+        //() => DeleteAllPhotos(), 
     ],
         function (err, results) {
             if (err) {

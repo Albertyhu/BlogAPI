@@ -1,16 +1,13 @@
 const UserPhoto = require('../model/user_photo.js')
 const User = require('../model/user.js');
-const SampleUsers = require('../sampleData/sampleUsers.js');
-const dataHooks = require('../util/dataHooks.js');
 const { body, validationResult } = require("express-validator");
-const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
-const bcrypt = require("bcrypt")
-const { BufferImage, findDuplicateNameAndEmail } = dataHooks(); 
 const Comment = require('../model/comment.js'); 
 const async = require('async');
-const mongoose = require("mongoose");
-const ObjectId = mongoose.Types.ObjectId;
+const {
+    BufferImage,
+    BufferArrayOfImages,
+} = require("../util/imageHooks.js")
 
 exports.DeletePhoto = [
     body("owner"),
@@ -137,7 +134,7 @@ exports.AddComment = [
         .withMessage("You have to write something to post your comment.")
         .escape(),  
     body("author"), 
-    (req, res, next) => {
+    async (req, res, next) => {
         var error = validationResult(req); 
         if (!error.isEmpty()) {
             console.log("AddComment Error: ", error)
@@ -150,15 +147,9 @@ exports.AddComment = [
             datePublished: Date.now(), 
             userPhoto: req.params.id, 
         } 
-        console.log("req.files: ", req.files)
+
         if (req.files) {
-            var images = req.files.map(img => {
-                return {
-                    data: img.buffer, 
-                    contentType: img.mimetype,
-                }
-            })
-            obj.images = images; 
+            obj.images = await BufferArrayOfImages(req.files)
         }
         var newDoc = new Comment(obj)
         async.waterfall([
@@ -277,19 +268,16 @@ exports.GetOnePhoto = async (req, res, next) => {
 }
 
 exports.UploadPhotos = async (req, res, next) => {
-    var images = req.files.map(img => {
+    var images = await Promise.all(req.files.map(async img => {
         const date = Date.now();
+        const formattedImg = await BufferImage(img); 
         return {
             title: img.originalname,
-            image: {
-                data: img.buffer,
-                contentType: img.mimetype,
-            },
+            image: formattedImg,
             publishedDate: date,
             owner: req.params.id,
         }
-    })
-    console.log("images: ", images)
+    }))
     try {
         async.waterfall([
             function (callback) {
@@ -388,3 +376,59 @@ exports.DeleteManyPhotos = [
         })
     }
 ]
+
+//This controller function retrieves a user's uploaded photos by pagination to support the load-by-scroll feature.
+exports.GetUserPhotosByPage = async (req, res, next) => {
+    const error = [];
+    var COUNT
+    var PAGINATION
+    try {
+        COUNT = parseInt(req.params.count);
+        PAGINATION = parseInt(req.params.page)
+    } catch (e) {
+        error.push(e)
+    }
+    if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+        error.push('Invalid count or pagination value');
+    }
+    if (error.length > 0) {
+        console.log("GetAllPostByNewest error: ", error)
+        return res.status(400).json({ error })
+    }
+    const start = PAGINATION * COUNT;
+    async.waterfall([
+        //Get user by name
+        function (callback) {
+            User.findOne({ username: req.params.id })
+                .then(user => {
+                    console.log("User has been retrieved")
+                    const userId = user._id;
+                    callback(null, userId)
+                })
+                .catch(error => {
+                    console.log("There was a problem with retrieving the user: ", error)
+                    callback(error)
+                })
+        },
+        function (userId, callback) {
+            UserPhoto.find({ owner: userId })
+                .skip(start)
+                .limit(COUNT)
+                .then(userPhotos => {
+                    console.log("Photos have been retrieved.")
+                    callback(null, userId, userPhotos)
+                })
+                .catch(error => {
+                    console.log("There was a problem with retrieving the user's photos: ", error)
+                    callback(error)
+                })
+        }
+    ], (error, userId, userPhotos) => {
+        if (error) {
+            console.log("GGetUserPhotosByPage error: ", error)
+            return res.status(500).json({ error })
+        }
+        console.log("GetUserPhotosByPage operation is successful.")
+        return res.status(200).json({ photos: userPhotos, userId })
+    })
+}

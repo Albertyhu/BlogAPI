@@ -4,6 +4,10 @@ const dataHooks = require("../util/dataHooks.js");
 const he = require("he");
 const fs = require('fs');
 const path = require("path");
+const {
+    BufferImage,
+    BufferArrayOfImages,
+} = require("../util/imageHooks.js");
 
 const { findDuplicateCategory } = dataHooks(); 
 
@@ -63,11 +67,7 @@ exports.CreateCategory = [
             }
 
             if (req.file) {
-                categoryImage = {
-                    data: req.file.buffer,
-                    contentType: req.file.mimetype,
-                }
-                obj.image = categoryImage;
+                obj.image = await BufferImage(req.file)
             }
             const newCategory = new Category(obj);
             await newCategory.save()
@@ -129,11 +129,7 @@ exports.EditCategory = [
                 _id: req.params.id,
             }
             if (req.file) {
-                categoryImage = {
-                    data: req.file.buffer,
-                    contentType: req.file.mimetype,
-                }
-                obj.image = categoryImage;
+                obj.image = await BufferImage(req.file)
             }
             await Category.findByIdAndUpdate(req.params.id, obj, {new: true})
                 .then(result => {
@@ -174,17 +170,20 @@ exports.GetPaginatedCategories = async (req, res, next) => {
     } catch (e) {
         error.push(e)
     }
+    if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+        error.push('Invalid count or pagination value');
+    }
     if (error.length > 0) {
         console.log("GetPaginatedCategories error: ", error)
         return res.status(400).json({ error })
     }
-
-    await Category.find({ published: true })
-        .then(categories => {
-
-            const start = PAGINATION * COUNT;
-            const end = start + COUNT - 1;
-            var paginatedResult = categories.slice(start, end)
+    const start = PAGINATION * COUNT;
+    await Category.find({})
+        .skip(start)
+        .limit(COUNT)
+        .sort({"name": 1})
+        .then(paginatedResult => {
+            console.log("Successfully retrieved paginated categories.")
             return res.status(200).json({ paginatedResult })
         })
         .catch(error => {

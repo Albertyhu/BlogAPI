@@ -7,20 +7,34 @@ const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
 const bcrypt = require("bcrypt")
-const { BufferImage, findDuplicateNameAndEmail } = dataHooks(); 
+const {  findDuplicateNameAndEmail } = dataHooks(); 
+const {
+    BufferImage,
+    BufferArrayOfImages, 
+} = require("../util/imageHooks.js")
 const UserPhoto = require('../model/user_photo.js')
 const mongoose =require('mongoose')
 const ObjectId = mongoose.Types.ObjectId;
 const Category = require("../model/category.js");
 const async = require("async"); 
 const ConnectionRequest = require('../model/connection_request.js'); 
+const sharp = require("sharp"); 
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
         await User.find({})
             .sort({ username: 1 })
             .exec()
-            .then(users => {
+            .then(result => {
+                const users = result.map(user => {
+                    return {
+                        username: user.username,
+                        _id: user._id,
+                        email: user.email,
+                        joinedDate: user.joinedDate,
+                        profile_pic: user.profile_pic,
+                    }
+                })
                 return res.status(200).json({ users })
             })
             .catch(error => {
@@ -31,10 +45,68 @@ exports.GetAllUsers = async (req, res, next) => {
     }
 }
 
+exports.GetUsersByPagination = async (req, res, next) => {
+    const error = [];
+    var COUNT
+    var PAGINATION
+    try {
+        COUNT = parseInt(req.params.count);
+        PAGINATION = parseInt(req.params.page)
+    } catch (e) {
+        error.push(e)
+    }
+    if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+        error.push('Invalid count or pagination value');
+    }
+    if (error.length > 0) {
+        console.log("GetAllPostByNewest error: ", error)
+        return res.status(400).json({ error })
+    }
+    const start = PAGINATION * COUNT;
+    await User.find({})
+        .skip(start)
+        .limit(COUNT)
+        .sort({ username: 1 })
+        .then(paginatedResult => {
+            const users = paginatedResult.map(user => {
+                var data = {
+                    username: user.username,
+                    _id: user._id,
+                    email: user.email,
+                    joinedDate: user.joinedDate,
+                }
+                if (user.profile_pic) {
+                    data.profile_pic = user.profile_pic;
+                }
+                return data;
+            })
+            return res.status(200).json({ users })
+        })
+        .catch(error => {
+            return res.status(400).json({ error: [{ param: "server", msg: err }] });
+        })
+
+}
+
 exports.GetCurrentUserAndCategories = (req, res, next) => {
     async.parallel({
-        GetUser(callback) {
+        GetUser(callback) {        
             User.findById(req.params.id)
+                .populate({
+                    path: "connection", 
+                    model: "User",
+                    options: {
+                        sort: { username: 1 }
+                    }
+                })
+                .populate({
+                    path: "notifications.sender"
+                })
+                .sort({ 'notifications.dateCreated': -1 })
+                .populate({
+                    path: "message.sender"
+                })
+                .sort({ 'message.dateCreated': -1 })
                 .then(result => {
                     callback(null, result)
                 })
@@ -62,9 +134,13 @@ exports.GetCurrentUserAndCategories = (req, res, next) => {
             joinedDate: result.GetUser.joinedDate,
             posts: result.GetUser.posts,
             profile_pic: result.GetUser.profile_pic,
+            coverPhoto: result.GetUser.coverPhoto,
             biography: result.GetUser.biography,
             SocialMediaLinks: result.GetUser.SocialMediaLinks,
             communitiesFollowed: result.GetUser.communitiesFollowed, 
+            connection: result.GetUser.connection, 
+            notifications: result.GetUser.notifications, 
+            message: result.GetUser.message, 
         }
         const categories = result.GetCategeories;
         res.status(200).json({categories, user})
@@ -125,6 +201,7 @@ exports.GetUser = async (req, res, next) => {
             joinedDate: user.joinedDate,
             posts: user.posts,
             profile_pic: user.profile_pic,
+            coverPhoto:  user.coverPhoto,
             biography: user.biography,
             SocialMediaLinks: user.SocialMediaLinks,
             message: `Successfully fetched ${user.username}`,
@@ -154,10 +231,31 @@ exports.GetUserProfilePicture = async (req, res, next) => {
     }
 }
 
-exports.UploadNewProfilePicture = (req, res, next) => {
+exports.GetUserProfilePictureAndCoverPhoto = async (req, res, next) => {
+    try {
+        await User.findById(req.params.id)
+            .then(result => {
+                return res.status(200).json({
+                    message: "Profile picture found",
+                    profile_pic: result.profile_pic ? result.profile_pic : null,
+                    cover_photo: result.coverPhoto ? result.coverPhoto : null, 
+                })
+            })
+            .catch(error => {
+                console.log("GetUserProfilePictureAndCoverPhoto error: ", error)
+                res.status(500).json({error})
+            })
+    }
+    catch (e) {
+        return res.status(500).json({ error: [{ param: "server", msg: "Internal service error: " + e }] })
+
+    }
+}
+
+exports.UploadNewProfilePicture = async (req, res, next) => {
     try {
          
-        const BufferedImg = BufferImage(req.file)
+        const BufferedImg = await BufferImage(req.file)
         const updates = {
             _id: req.params.id,
             profile_pic: BufferedImg, 
@@ -226,7 +324,6 @@ exports.UpdateUserProfile = [
             return res.status(400).json({ error: errors.array() });
         }
         try {
-            var ProfilePic = null;
             var newUpdate = {
                 username: he.decode(username.replace(/\s/g, '')),
                 email: he.decode(email),
@@ -234,16 +331,15 @@ exports.UpdateUserProfile = [
                 _id: req.params.id
             }
 
-            if (req.file) {
-                ProfilePic = {
-                   // data: fs.readFileSync(path.join(__dirname, '../public/uploads/', req.file.filename)),
-                    data: req.file.buffer, 
-                    contentType: req.file.mimetype,
-                }
-                newUpdate.profile_pic = ProfilePic;
+            if (typeof req.files.profile_pic != 'undefined' && req.files.profile_pic != null) {
+                newUpdate.profile_pic = await BufferImage(req.files.profile_pic[0])
             }
 
-            await User.findByIdAndUpdate(req.params.id, newUpdate)
+            if (typeof req.files.coverPhoto != 'undefined' && req.files.coverPhoto != null) {
+                newUpdate.coverPhoto = await BufferImage(req.files.coverPhoto[0])
+            }
+           
+            await User.findByIdAndUpdate(req.params.id, newUpdate, {new: true})
                 .then((result) => {
                     const updatedUser = {
                         username: req.body.username,
@@ -251,8 +347,15 @@ exports.UpdateUserProfile = [
                         joinedDate: result.joinedDate,
                         id: result._id,
                     }
+                    const ProfilePicture = result.profile_pic ? result.profile_pic : null; 
+                    const coverPhoto = result.coverPhoto ? result.coverPhoto : null; 
                     console.log(`${req.body.username}'s profile has successfully been updated.`)
-                    return res.status(200).json({ user: updatedUser, message: `${req.body.username}'s profile has successfully been updated.`})
+                    return res.status(200).json({
+                        user: updatedUser,
+                        ProfilePicture,
+                        coverPhoto,
+                        message: `${req.body.username}'s profile has successfully been updated.`
+                    })
                 })
                 .catch(e => {
                     return res.status(5000).json({ error: [{param: "server", msg: `${e}`}]})
@@ -390,9 +493,11 @@ exports.GetUserByName = async (req, res, next) => {
                     joinedDate: result.joinedDate,
                     posts: result.posts,
                     profile_pic: result.profile_pic,
+                    coverPhoto: result.coverPhoto,
                     biography: result.biography,
                     SocialMediaLinks: result.SocialMediaLinks,
                     connection: result.connection, 
+                    _id: result._id,
                     }
                 res.status(200).json({
                     user, 
@@ -410,7 +515,9 @@ exports.GetUserByName = async (req, res, next) => {
 }
 
 exports.SendConnectionRequest = [
-    body("senderId"),
+    body("senderId")
+        .notEmpty()
+        .isMongoId(),
     body("message")
         .trim()
         .escape(),
@@ -418,23 +525,71 @@ exports.SendConnectionRequest = [
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             console.log("SendConnectionRequest error 1: ", errors.array())
-            res.status(400).json({error: errors.array()})
+            res.status(400).json({ error: errors.array() })
         }
         const obj = {
             sender: req.body.senderId,
             receiver: req.params.id,
-            message: he.decode(req.body.message),
-            dateSent: Date.now(), 
-        } 
+            message: req.body.message ? he.decode(req.body.message) : null,
+            dateSent: Date.now(),
+        }
         const newRequest = new ConnectionRequest(obj)
-        await newRequest.save()
-            .then(result => {
-                res.status(200).json({})
-            })
-            .catch(error => {
-                console.log("SendConnectionRequest error 1: ", error)
-                res.status(400).json({ error})
-            })
+        async.waterfall([
+            function (callback) {
+                newRequest.save()
+                    .then(newRequest => {
+                        callback(null, newRequest)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem saving the new connection request: ", error)
+                        callback(error)
+                    })
+            },
+            function (newRequest, callback) {
+                User.findByIdAndUpdate(req.body.senderId, {
+                    $addToSet: { connectionRequest: newRequest._id},
+                }).then(updatedSender => {
+                    if (!updatedSender) {
+                        res.status(404).json({ error: [{msg: "Sender is not found", param: "Bad client request"}]})
+                    }
+                    callback(null, newRequest)
+                })
+                    .catch(error => {
+                        console.log("There was a problem updating the sender document: ", error)
+                        callback(error)
+                    })
+            },
+            function (newRequest, callback) {
+                const newNotification = {
+                    message: newRequest.message, 
+                    sender: req.body.senderId,
+                    action: "connection_request",
+                    dateCreated: Date.now(), 
+                }
+                User.findByIdAndUpdate(req.params.id, {
+                    $push: { connectionRequest: newRequest._id,
+                                notifications: newNotification, 
+                    }
+                })
+                    .then(updatedReceiver => {
+                        if (!updatedReceiver) {
+                            res.status(404).json({ error: [{ msg: "Receiver is not found", param: "Bad client request" }] })
+                        }
+                        callback(null, newRequest)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem updating the sender document: ", error)
+                        callback(error)
+                    })
+            }
+        ], (error, newRequest) => {
+            if (error) {
+                console.log("SendConnectionRequest  Error: ", error)
+                return res.status(500).json({ error })
+            }
+            return res.status(200).json({})
+        })
+    
     }
 ]
 

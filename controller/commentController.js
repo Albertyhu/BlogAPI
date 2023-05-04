@@ -11,6 +11,10 @@ const async = require('async');
 const fs = require('fs')
 const path = require("path")
 const UserPhoto = require("../model/user_photo.js"); 
+const {
+    BufferImage,
+    BufferArrayOfImages,
+} = require("../util/imageHooks.js"); 
 
 exports.AddCommentToPost = [
     body("content")
@@ -19,7 +23,7 @@ exports.AddCommentToPost = [
         .withMessage("You have to write something to post your comment.")
         .escape(),
     body("author"),
-    (req, res, next) => {
+    async (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(404).json({ error: errors.array() })
@@ -34,13 +38,15 @@ exports.AddCommentToPost = [
             post: req.params.id, 
         }
         if (typeof req.files != 'undefined' && req.files.length > 0) {
-            images = req.files.map(img => {
-                return {
-                    data: img.buffer, 
-                    contentType: img.mimetype,
-                }
-            })
-            obj.images = images; 
+            //images = req.files.map(img => {
+            //    return {
+            //        data: img.buffer,
+            //        contentType: img.mimetype,
+            //    }
+            //})
+
+            //obj.images = images; 
+            obj.images = await BufferArrayOfImages(req.files); 
         }
 
         const newComment = new Comment(obj)
@@ -88,28 +94,22 @@ exports.AddCommentToUserPhoto = [
         .withMessage("You have to write something to post your comment.")
         .escape(),
     body("author"),
-    (req, res, next) => {
+    async (req, res, next) => {
         var error = validationResult(req);
         if (!error.isEmpty()) {
             console.log("AddComment Error: ", error)
             return res.status(404).json({ error: error.array() })
         }
-        console.log("req.body: ", req.body)
+
         var obj = {
             content: he.decode(req.body.content),
             author: req.body.author,
             datePublished: Date.now(),
             userPhoto: req.params.id,
         }
-        console.log("req.files: ", req.files)
+
         if (req.files) {
-            var images = req.files.map(img => {
-                return {
-                    data: img.buffer,
-                    contentType: img.mimetype,
-                }
-            })
-            obj.images = images;
+            obj.images = await BufferArrayOfImages(req.files); 
         }
         var newComment = new Comment(obj)
         async.waterfall([
@@ -171,7 +171,7 @@ exports.AddReplyToComment = [
     body("postId"), 
     body("userPhotoId"), 
     body("root"),
-    (req, res, next) => {
+    async (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(404).json({ error: errors.array() })
@@ -190,14 +190,14 @@ exports.AddReplyToComment = [
             userRepliedTo: req.body.userRepliedTo, 
         }
         if (typeof req.files != 'undefined' && req.files.length > 0) {
-            images = req.files.map(img => {
-                return {
-                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
-                    data: img.buffer, 
-                    contentType: img.mimetype,
-                }
-            })
-            obj.images = images;
+            //images = req.files.map(img => {
+            //    return {
+            //        data: img.buffer, 
+            //        contentType: img.mimetype,
+            //    }
+            //})
+            //obj.images = images;
+            obj.images = await BufferArrayOfImages(req.files); 
         }
 
         //console.log("obj.images: ", obj.images)
@@ -326,13 +326,7 @@ exports.EditComment = [
 
         var newImages = []; 
         if (typeof req.files != 'undefined') {
-            newImages = req.files.map(img => {
-                return {
-                    //data: fs.readFileSync(path.join(__dirname, "../public/uploads/", img.filename)),
-                    data: img.buffer, 
-                    contentType: img.mimetype,
-                }
-            })
+            newImages = await BufferArrayOfImages(req.files); 
         }
         try {
             async.waterfall([
@@ -423,76 +417,6 @@ exports.EditComment = [
 ]
 
 //This deletes the comment and all it's replies
-//exports.DeleteCompletely = (req, res, next) => {
-//    try {
-//        async.waterfall([
-//        //delete the Comment document
-//            function (callback) {
-//                Comment.deleteOne({ _id: req.params.id })
-//                    .then(comment => {
-//                        console.log("Document comment has been deleted: ", comment)
-//                        callback(null, comment)
-//                    })
-//                    .catch(error => {
-//                        callback(error)
-//                    })
-//            },
-//            //delete the replies of the comment
-//            function (comment, callback) {
-//                Comment.deleteMany({ commentRepliedTo: req.params.id })
-//                    .then(replies => {
-//                        console.log("Attempted to delete all replies of the comment")
-//                        callback(null, comment)
-//                    })
-//                    .catch(error => {
-//                        callback(error)
-//                    })
-//            },
-//            //remove comment ID from post
-//            function (comment, callback) {
-//                if (comment.post) {
-//                    Post.findByIdandUpdate(comment.post, {
-//                        $pull: {comments: req.params.id }
-//                    })
-//                        .then(() => {
-//                            console.log("Removed comment ObjectId from Post")
-//                            callback(null, comment)
-//                        })
-//                        .catch(error => {
-//                            callback(error)
-//                        })
-//                }
-//                else
-//                    callback(null, comment)
-//            },
-//            function (comment, callback) {
-//                if (comment.commentRepliedTo) {
-//                    Comment.findByIdAndUpdate(comment.commentRepliedTo, {
-//                        $pull: {replies: req.params.id}
-//                    })
-//                        .then(() => {
-//                            console.log("Removed comment Object Id from comment being replied to.")
-//                            callback(null, comment)
-//                        })
-//                    .catch(error => callback(error))
-//                }
-//                else
-//                   callback(null, comment)
-//            }
-//        ], (error, comment) => {
-//            if (error) {
-//                console.log("DeleteCompletely error: ", error)
-//                return res.status(500).json({ error: [{param: "server", msg: "Internal Server Error"}]})
-//            }
-//            console.log("Comment has been completely deleted.")
-//            return res.status(200).json({ message: [{param: "general", msg: "Your comment is successfully deleted."}]})
-//        })
-//    } catch (e) {
-//        console.log("DeleteCompletely error: ", e)
-//    }
-//}
-
-
 exports.DeleteCompletely = [
     body("rootId"),
     body("rootType"), 

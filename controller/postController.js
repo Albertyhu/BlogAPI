@@ -1,27 +1,22 @@
 const Post = require('../model/post.js'); 
-const User = require('../model/user.js');
-const Comment = require("../model/comment.js"); 
-const { ObjectId } = require('mongodb');
 const { body, validationResult } = require('express-validator')
-const { CheckLength } = require('../util/tinyMCEHooks.js'); 
 const he = require('he'); 
-const { retrieveTagId } = require('./tagController.js'); 
-const Tag = require("../model/tag.js"); 
-const { genKey } = require('../util/randGen.js');
 const TagController = require('./tagController.js'); 
 const async = require('async');
-const fs = require('fs')
-const path = require("path")
+const {
+    BufferImage,
+    BufferArrayOfImages,
+} = require("../util/imageHooks.js"); 
 
 exports.AllPosts = async (req, res, next) => {
     try {
-        var result = await AllPosts.find({})
+        var post = await Post.find({published: true})
             .sort({ datePublished: -1 })
             .populate("author")
-            .populate("category")
+            .populate("tag")
             .exec() 
-        if (result) {
-            res.status(200).json(result);
+        if (post) {
+            res.status(200).json({ post });
         }
         else {
             res.status(404).json({message: "No posts yet"})
@@ -35,6 +30,7 @@ exports.FindOnePost = async (req, res, next) => {
     try {
         const PostId = req.params.id; 
         const result = await Post.findById(PostId)
+            .populate("category")
             .populate({
                 path: 'author',
                 model: "User",
@@ -62,7 +58,6 @@ exports.FindOnePost = async (req, res, next) => {
         if (!result) {
             return res.status(404).json({ error: [{param: 'post', msg: "Post is not found." }]})
         }
-  //      console.log('comments: ', result.comments)
         res.status(200).json({ payload: result }); 
     } catch (e) {
         console.log("Internal server error - FindOnePost:", e) 
@@ -112,6 +107,44 @@ exports.GetPostsByCategory = async (req, res, next) => {
             }).catch(e => {
                 console.log("There was an error retrieving posts by category: ", e)
                 res.status(500).json({ error: [{param: "server", msg: `Internal server error.`}]})
+            })
+    } catch (e) {
+        console.log("There was an error retrieving posts by category: ", e);
+        res.status(500).json({ error: [{ param: "server", msg: `Internal server error.` }] })
+    }
+}
+
+exports.GetPaginatedPostsByCategory = async (req, res, next) => {
+    try {
+        const error = [];
+        var COUNT
+        var PAGINATION
+        try {
+            COUNT = parseInt(req.params.count);
+            PAGINATION = parseInt(req.params.page)
+        } catch (e) {
+            error.push(e)
+        }
+        if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+            error.push('Invalid count or pagination value');
+        }
+        if (error.length > 0) {
+            console.log("GetPaginatedPostsByCategory error: ", error)
+            return res.status(400).json({ error })
+        }
+
+        const start = PAGINATION * COUNT;
+        await Post.find({ category: req.params.categoryID, published: true })
+            .skip(start)
+            .limit(COUNT)
+            .sort({lastEdited: -1})
+            .populate("author")
+            .populate("tag")
+            .then(paginatedResult => {
+                res.status(200).json({ paginatedResult })
+            }).catch(e => {
+                console.log("There was an error retrieving posts by category: ", e)
+                res.status(500).json({ error: [{ param: "server", msg: `Internal server error.` }] })
             })
     } catch (e) {
         console.log("There was an error retrieving posts by category: ", e);
@@ -269,26 +302,20 @@ exports.CreatePostAndUpdateTags = [
             datePublished: DatePublished,
             lastEdited: DatePublished, 
         }
+        //if (typeof req.files.mainImage != 'undefined' && req.files.mainImage != null) {
+        //    mainImage = {
+        //        data: req.files.mainImage[0].buffer,
+        //        contentType: req.files.mainImage[0].mimetype,
+        //    }
+        //    obj.mainImage = mainImage;
+        //}
         if (typeof req.files.mainImage != 'undefined' && req.files.mainImage != null) {
-            mainImage = {
-                  data: req.files.mainImage[0].buffer, 
-                  contentType: req.files.mainImage[0].mimetype,
-            }
-            obj.mainImage = mainImage;
+            obj.mainImage = await BufferImage(req.files.mainImage[0]);
         }
-        var images = null;
 
         if (typeof req.files.images != 'undefined' && req.files.images.length > 0) {
-            images = req.files.images.map(file => {
-                return {
-                    data: file.buffer,
-                    contentType: file.mimetype,
-                }
-            })
-            obj.images = images;
+            obj.images = await BufferArrayOfImages(req.files.images)
         }
-
-        console.log("obj.images: ", obj.images)
         try {
             const tagArray = JSON.parse(tag)
             async.waterfall([
@@ -407,11 +434,8 @@ exports.EditPost = [
             lastEdited: Date.now(),
         }
 
-        if (typeof req.files.mainImage != 'undefined ' && req.files.mainImage != null) {
-            var mainImage = {};
-            mainImage.data = req.files.mainImage[0].buffer, 
-            mainImage.contentType = req?.files?.mainImage[0]?.mimetype;
-            obj.mainImage = mainImage;
+        if (typeof req.files.mainImage != 'undefined' && req.files.mainImage != null) {
+            obj.mainImage = await BufferImage(req.files.mainImage[0]);
         }
 
         var keepImages = []; 
@@ -422,13 +446,7 @@ exports.EditPost = [
         var newImages = null;
 
         if (typeof req.files.images != 'undefined' && req.files.images.length > 0) {
-            newImages = req.files.images.map(file => {
-                return {
-                    //data: fs.readFileSync(path.join(__dirname, '../public/uploads/', file.filename)),
-                    data: file.buffer,
-                    contentType: file.mimetype,
-                }
-            })
+            newImages = await BufferArrayOfImages(req.files.images)
         }
 
         try {
@@ -566,29 +584,32 @@ exports.EditPost = [
 ]
 
 exports.GetAllPostByNewest = async (req, res, next) => {
-    const error = []; 
-    var COUNT 
-    var PAGINATION 
+    const error = [];
+    var COUNT
+    var PAGINATION
     try {
         COUNT = parseInt(req.params.count);
         PAGINATION = parseInt(req.params.page)
     } catch (e) {
         error.push(e)
     }
-    if(error.length > 0) {
+    if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+        error.push('Invalid count or pagination value');
+    }
+    if (error.length > 0) {
         console.log("GetAllPostByNewest error: ", error)
-        return res.status(400).json({ error})
+        return res.status(400).json({ error })
     }
 
+    const start = PAGINATION * COUNT;
     await Post.find({ published: true })
-        .sort({ datePublished: -1 })
+        .skip(start)
+        .limit(COUNT)
+        .sort({ lastEdited: -1 })
         .populate("author")
         .populate("tag")
-        .then(postList => {
-
-            const start = PAGINATION * COUNT;
-            const end = start + COUNT - 1;
-            var paginatedResult = postList.slice(start, end)
+        .populate('category')
+        .then(paginatedResult => {
             return res.status(200).json({ paginatedResult })
         })
         .catch(error => {

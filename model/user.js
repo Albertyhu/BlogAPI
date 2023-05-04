@@ -18,19 +18,22 @@ const User = new Schema({
     coverPhoto: { data: Buffer, contentType: String },
     images: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }], 
     communitiesFollowed: [{ type: Schema.Types.ObjectId, ref: "Categories" }],
+
     //Other users that the current user is connected to. This is similar to the friend feature on Facebook.
     connection: [{ type: Schema.Types.ObjectId, ref: "UserPhoto" }],
-    //pendingRequestSent: [{ type: Schema.Types.ObjectId, ref: "ConnectionReqest" }],
+    connectionRequests: [{ type: Schema.Types.ObjectId, ref: "ConnectionReqest" }],
     //pendintRequestReceived: [{ type: Schema.Types.ObjectId, ref: "ConnectionReqest" }],
     //notification will be in the form of messages
     notifications: [{
         message: { type: String },
         sender: { type: Schema.Types.ObjectId, ref: "User" }, 
-        action: {type: String}, 
+        action: { type: String }, 
+        dateCreated: {type: Date}, 
     }], 
     message: [{
         message: { type: String },
-        sender: { type: Schema.Types.ObjectId, ref: "User" }
+        sender: { type: Schema.Types.ObjectId, ref: "User" },
+        dateCreated: {type: Date}
     }]
 })
 

@@ -1,19 +1,10 @@
 const User = require('../model/user');
-const { body, validationResult } = require('express-validator');
-const fs = require('fs');
-const path = require('path');
+const { body, validationResult } = require('express-validator'); 
 const bcrypt = require('bcrypt');
 const checkEmail = require('../util/checkEmail.js')
 const jwt = require('jsonwebtoken');
-const passport = require("passport");
 const he = require('he');
-
-var dummyData = {
-    username: "Bob",
-    email: "bob@gmail.com",
-    password: "test123",
-    confirm_password: "test123",
-}
+const sharp = require('sharp');
 
 exports.SignIn = (req, res, next) => {
     res.render('login', {
@@ -52,6 +43,7 @@ exports.Login = async (req, res, next) => {
             joinedDate: result.joinedDate,
             id: result._id,
             "role": "member", 
+
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
 
@@ -60,6 +52,7 @@ exports.Login = async (req, res, next) => {
             token,
             message: "User is signed in.", 
             profile_pic: result.profile_pic ? result.profile_pic : null,
+            connection: result.connection, 
         })
     } catch (e) {
         return res.status(500).json({ error: [{param: "server", msg: "Internal service error: " + e }]})
@@ -135,8 +128,13 @@ exports.Register = [
             var ProfilePic = null;
 
             if (req.file) {
+                const compressedImage = await sharp(req.file.buffer)
+                    .resize(800) // Resize the image to a maximum width of 800 pixels
+                    .jpeg({ quality: 75 }) // Compress the image using JPEG format with a quality of 80%
+                    .toBuffer();
+
                 ProfilePic = {
-                    data: req.file.buffer,
+                    data: compressedImage,
                     contentType: req.file.mimetype,
                 }
             }

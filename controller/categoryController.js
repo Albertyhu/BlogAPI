@@ -21,6 +21,25 @@ exports.CategoryList = async (req, res, next) => {
             res.status(404).json({ error: [{param: "Error in retriving list of categogy - ", msg: e}]})
         })
 }
+exports.GetCategorySearchData = async (req, res, next) => {
+    await Category.find({})
+        .select("name")
+        .sort({ name: 1 })
+        .then(result => {
+            const data = result.map(item => {
+                return {
+                    ...item,
+                    searchType: "category"
+                }
+            }) 
+            res.status(200).json({ data })
+        })
+        .catch(error => {
+            console.log("GetCommentSearchData error: ", error)
+            res.status(400).json({ error })
+        })
+}
+
 
 exports.FindOneCategory = (req, res, next) => {
     Category.findById(req.params.id)

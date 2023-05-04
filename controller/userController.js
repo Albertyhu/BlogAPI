@@ -14,11 +14,9 @@ const {
 } = require("../util/imageHooks.js")
 const UserPhoto = require('../model/user_photo.js')
 const mongoose =require('mongoose')
-const ObjectId = mongoose.Types.ObjectId;
 const Category = require("../model/category.js");
 const async = require("async"); 
 const ConnectionRequest = require('../model/connection_request.js'); 
-const sharp = require("sharp"); 
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
@@ -43,6 +41,25 @@ exports.GetAllUsers = async (req, res, next) => {
     } catch (err){
         return res.status(404).json({ error: [{ param: "server", msg: err }] })
     }
+}
+
+exports.GetUserSearchData = async (req, res, next) => {
+    await User.find({})
+        .select("name")
+        .sort({ name: 1 })
+        .then(result => {
+            const data = result.map(item => {
+                return {
+                    ...item,
+                    searchType: "users"
+                }
+            })
+            res.status(200).json({ data })
+        })
+        .catch(error => {
+            console.log("GetCommentSearchData error: ", error)
+            res.status(400).json({ error })
+        })
 }
 
 exports.GetUsersByPagination = async (req, res, next) => {

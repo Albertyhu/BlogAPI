@@ -5,6 +5,8 @@ const { upload } = require('../middleware/multerSetup.js');
 const { verifyToken } = require('../middleware/verifyMember.js')
 const commentController = require('../controller/commentController.js'); 
 
+router.get("/get_search_data", cors(), commentController.GetCommentSearchData)
+
 router.put("/:id/updateLike", cors(), verifyToken, commentController.UpdateLikes)
 
 router.put('/:id/add_like', cors(), verifyToken, upload.none(), commentController.AddToLikes);

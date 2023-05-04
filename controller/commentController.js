@@ -510,4 +510,24 @@ exports.DeleteCompletely = [
     }
 ]
 
-    
+exports.GetCommentSearchData = async (req, res, next) => {
+    await Comment.find({})
+        .populate({
+            path: "author",
+            select: "username"
+        })
+        .select("content")
+        .then(result => {
+            const data = result.map(item => {
+                return {
+                    ...item,
+                    searchType: "comment"
+                }
+            })
+            res.status(200).json({ data })
+        })
+        .catch(error => {
+            console.log("GetCommentSearchData error: ", error)
+            res.status(400).json({error})
+        })
+}

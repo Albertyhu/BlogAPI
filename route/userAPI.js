@@ -11,6 +11,8 @@ router.get('/', cors(), UserController.GetAllUsers)
 
 router.get('/usernameandemail', cors(), UserController.GetUsernameAndEmails)
 
+router.get("/get_search_data", cors(), UserController.GetUserSearchData)
+
 router.get("/get_users_by_pagination/:page/:count", cors(), UserController.GetUsersByPagination)
 
 router.get('/:authorId/posts', cors(), postController.AllPostsByAuthor);

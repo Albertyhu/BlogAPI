@@ -8,6 +8,8 @@ const commentController = require('../controller/commentController.js');
 
 router.get('/', cors(), postController.AllPosts)
 
+router.get("/get_search_data", cors(), postController.GetPostSearchData)
+
 router.post("/create", cors(), verifyToken, upload.fields([
     { name: "mainImage", maxCount: 1 },
     { name: "images", maxCount: 1000 }

@@ -26,6 +26,29 @@ exports.AllPosts = async (req, res, next) => {
     }
 }
 
+exports.GetPostSearchData = async (req, res, next) => {
+    await Post.find({ published: true })
+        .select("title content tag")
+        .sort({ title: 1 })
+        .populate({
+            path: "tag",
+            model: "Tag"
+        }).then(result => {
+            const data = result.map(({ _id, title, content, tag }) => ({
+                _id,
+                title,
+                content,
+                tag,
+                searchType: "post"
+            })); 
+            res.status(200).json({ data })
+        })
+        .catch(error => {
+            console.log("GetCommentSearchData error: ", error)
+            res.status(400).json({ error })
+        })
+}
+
 exports.FindOnePost = async (req, res, next) => {
     try {
         const PostId = req.params.id; 

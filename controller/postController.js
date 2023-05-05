@@ -35,17 +35,25 @@ exports.GetPostSearchData = async (req, res, next) => {
             path: "tag",
             model: "Tag"
         }).then(result => {
-            const data = result.map(({ _id, title, content, tag }) => ({
-                _id,
-                title,
-                content,
-                tag,
-                searchType: "post"
-            })); 
+            const data = result.map(({ _id, title, content, tag }) => {
+                const collectedStrings = []
+                collectedStrings.push(content);
+                tag.forEach(item => {
+                    collectedStrings.push(item.name)
+                })
+                collectedStrings.push(he.decode(title))
+                return{
+                        _id,
+                        title,
+                        content,
+                        tag,
+                        collectedStrings, 
+                }
+            });
             res.status(200).json({ data })
         })
         .catch(error => {
-            console.log("GetCommentSearchData error: ", error)
+            console.log("GetPostSearchData error: ", error)
             res.status(400).json({ error })
         })
 }

@@ -48,10 +48,17 @@ exports.GetUserSearchData = async (req, res, next) => {
         .select("name")
         .sort({ name: 1 })
         .then(result => {
-            const data = result.map(item => {
+            const data = result.map(({_id, username, email, biography }) => {
+                const collectedStrings = []
+                collectedStrings.push(username)
+                collectedStrings.push(email)
+                collectedStrings.push(biography)
                 return {
-                    ...item,
-                    searchType: "users"
+                    _id,
+                    username,
+                    email,
+                    biography,
+                    collectedStrings, 
                 }
             })
             res.status(200).json({ data })

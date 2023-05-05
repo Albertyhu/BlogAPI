@@ -514,14 +514,24 @@ exports.GetCommentSearchData = async (req, res, next) => {
     await Comment.find({})
         .populate({
             path: "author",
-            select: "username"
+            select: "username _id"
+        })
+        .populate({
+            path: "post",
+            select: "title _id"
         })
         .select("content")
         .then(result => {
-            const data = result.map(item => {
+            const data = result.map(({ _id, content, author, post }) => {
+                const collectedStrings = []; 
+                collectedStrings.push(content); 
+                collectedStrings.push(post.title); 
                 return {
-                    ...item,
-                    searchType: "comment"
+                    _id,
+                    content,
+                    author, 
+                    post, 
+                    collectedStrings, 
                 }
             })
             res.status(200).json({ data })

@@ -67,7 +67,7 @@ const dataHooks = () => {
         return arr;
     }
 
-    
+    const AddToArray = (array, ) => { }
 
     return {
         TestFunction,

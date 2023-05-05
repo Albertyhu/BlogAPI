@@ -2,7 +2,7 @@ const SampleUsers = require('../sampleData/sampleUsers.js');
 const async = require('async'); 
 const mongoose = require('mongoose');
 const User = require('../model/user.js'); 
-const SamplePosts = require('../sampleData/post2.js'); 
+const SamplePosts = require('../sampleData/post.js'); 
 const Post = require('../model/post.js'); 
 const SampleComments = require('../sampleData/comments.js'); 
 const Comment = require('../model/comment.js'); 
@@ -18,19 +18,44 @@ const PopulateUsers = data => {
     })
 }
 
+//const PopulatePosts = async data => {
+//    var copy = data;
+//    const categoryList = await Category.find({})
+//    copy.forEach(val => {
+//        val.category = pickCategoryId(categoryList);
+//    })
+//    await Post.insertMany(copy)
+//        .then(() => {
+//           console.log("Posts are inserted.")
+//        })
+//        .catch((e) => {
+//            console.log("Error in uploading posts: ", e)
+//        })
+//}
+
 const PopulatePosts = async data => {
-    var copy = data; 
+    var copy = data;
     const categoryList = await Category.find({})
-    copy.forEach(val => {
-        val.category = pickCategoryId(categoryList);
-    })
-    await Post.insertMany(copy)
-        .then(() => {
-           console.log("Posts are inserted.")
-        })
-        .catch((e) => {
-            console.log("Error in uploading posts: ", e)
-        })
+    for (let post of data) {
+        const categoryIndex = Math.floor(Math.random() * categoryList.length);
+        const category = categoryList[categoryIndex];
+        var newDate = Date.now()
+        post.datePublished = newDate;
+        post.lastEdited = newDate; 
+        post.category = category._id; 
+        // Create a new Post document and set its properties
+        const newPost = new Post(post);
+
+        // Save the new Post document to the database
+        await newPost.save();
+
+        // Update the corresponding Category document by adding the new post to its post array
+       // category.post.push(newPost._id);
+        //await category.save();
+        await Category.findByIdAndUpdate(category._id, {
+            $addToSet: {post: newPost._id}
+        }).then(()=>console.log("Sample post successfully created in the database."))
+    }
 }
 
 const PopulateComments = async (data) => {
@@ -46,11 +71,37 @@ const PopulateComments = async (data) => {
 
 
 const DeleteAllPost = async () => {
-    await Post.deleteMany({})
-        .then(() => {
-            console.log("All posts are successfully deleted")
-        })
+    async.parallel([
+        function (callback) {
+           Post.deleteMany({})
+               .then(() => {
+                    callback(null)
+                    console.log("All posts are successfully deleted")
+                })
+               .catch(error => {
+                   console.log("error: ", error)
+               })
+        },
+        function (callback) {
+            Category.updateMany({}, {
+                $unset: {post: 1}
+            }, { multi: true })
+                .then(() => {
+                    callback(null)
+                    console.log("Categories are successfully updated.")
+                })
+                .catch(error => {
+                    console.log("error: ", error)
+                })
+        }
+    ], (error) => {
+        if (error) {
+            console.log("DeleteAllPost error: ", error)
+        }
+    })
 }
+
+const DeleteAllPostIdFromCategory = async () => {}
 
 const DeleteAllPhotos = async () => {
     await UserPhoto.deleteMany({})
@@ -72,12 +123,11 @@ const DeletePostsByTitle = async (title) => {
         })
 }
 
-
 exports.populate = (req, res, next) => {
     async.parallel([
         () => { PopulatePosts(SamplePosts) },
         //() => { PopulateComments(SampleComments)},
-        // () => DeleteAllPost(),
+         //() => DeleteAllPost(),
         //() => { DeletePostsByTitle("How to pet a dog")},
         //() => DeleteAllPhotos(), 
     ],

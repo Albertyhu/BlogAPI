@@ -11,6 +11,8 @@ router.get("/", cors(), categoryController.CategoryList);
 
 router.get("/get_search_data", cors(), categoryController.GetCategorySearchData)
 
+router.get("/get_popular_categories/:count", cors(), categoryController.GetMostPopularCategories)
+
 router.post("/create", cors(), verifyToken, upload.single("image"), categoryController.CreateCategory);
 
 router.get("/get_paginated_categories/:page/:count", cors(), categoryController.GetPaginatedCategories)

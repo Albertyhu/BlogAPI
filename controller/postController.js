@@ -1,4 +1,5 @@
 const Post = require('../model/post.js'); 
+const Category = require('../model/category.js');
 const { body, validationResult } = require('express-validator')
 const he = require('he'); 
 const TagController = require('./tagController.js'); 
@@ -193,7 +194,6 @@ exports.DeletePostById = async (req, res, next) => {
             function (callback) {
                 TagController.RemovePostFromAllTags(PostId)
                     .then(result => {
-                        console.log("After removing post from tags: ", result)
                         return callback(null)
                     })
                     .catch(e => {
@@ -201,6 +201,19 @@ exports.DeletePostById = async (req, res, next) => {
                         return callback(e)
                     })
             },
+            //update category
+            function (callback) {
+                Category.findOneAndUpdate({ post: { $in: PostId } }, {
+                    $pull: {post: PostId}, 
+                })
+                    .then(result => {
+                        return callback(null)
+                    })
+                    .catch(e => {
+                        console.log("DeletePostById Error in 2nd function: ", e)
+                        return callback(e)
+                    })
+            }
         ], (error, post) => {
             if (error) {
                 console.log('Callback error: ', error)
@@ -379,10 +392,19 @@ exports.CreatePostAndUpdateTags = [
                     Post.findByIdAndUpdate(post._id, newUpdate, { new: true })
                         .then(updatedPost => {
                             console.log("Tags are successfully saved on post")
-                            return callback(null, post, tags, updatedPost)
+                            callback(null, post, tags, updatedPost)
                         })
                         .catch(err => {
-                            return callback(err)
+                            callback(err)
+                        })
+                },
+                function (post, tags, updatedPost, callback) {
+                    Category.findByIdAndUpdate(category, {
+                        $addToSet: {post: post._id}, 
+                    })
+                        .then(() => callback(null, post, tags, updatedPost))
+                        .catch(err => {
+                            callback(err)
                         })
                 }
             ], (err, post, tags, updatedPost) => {
@@ -625,10 +647,13 @@ exports.GetAllPostByNewest = async (req, res, next) => {
     }
 
     const start = PAGINATION * COUNT;
+    console.log("new")
+    console.log("start: ", start)
+    console.log("pagination: ", PAGINATION)
     await Post.find({ published: true })
+        .sort({ lastEdited: -1 })
         .skip(start)
         .limit(COUNT)
-        .sort({ lastEdited: -1 })
         .populate("author")
         .populate("tag")
         .populate('category')

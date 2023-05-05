@@ -40,6 +40,30 @@ exports.GetCategorySearchData = async (req, res, next) => {
         })
 }
 
+exports.GetMostPopularCategories = async (req, res, next) => {
+    const COUNT = parseInt(req.params.count); 
+    await Category.aggregate([{
+        $project: {
+            _id: 1,
+            name: 1,
+            post: 1, 
+            numPosts: { $size: "$post" }
+        }
+    },
+        {
+            $sort: { numPosts: -1 }
+        },
+        {
+            $limit: 5
+        }])
+        .then(data => {
+            res.status(200).json({ data })
+        })
+        .catch(error => {
+            console.log("GetMostPopularCategories Error : ", error)
+            res.status(500).json({error})
+        })
+}
 
 exports.FindOneCategory = (req, res, next) => {
     Category.findById(req.params.id)

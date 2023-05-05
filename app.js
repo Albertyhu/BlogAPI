@@ -77,7 +77,7 @@ app.use('/user_photo', userPhotoRoute);
 app.options('*', cors(corsOptions));
 
 const { populate } = require('./controller/sampleData.js')
-//populate(); 
+//populate();  
 
 app.use(function (req, res, next) {
     next(createError(404));

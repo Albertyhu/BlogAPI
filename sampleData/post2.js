@@ -47,7 +47,6 @@ const post = [
         "published": true,
         "datePublished": "2022-02-12T08:00:00Z",
         "author": "640679c46edb54e6d6e34c38",
-       
         "abstract": "Tips for building a great remote team.",
         "category": "",
         "tag": [],
@@ -216,24 +215,11 @@ const post = [
         "published": true,
         "category": "",
         "tags": [],
-        "authors": [
-            {
-                "_id": "640679c46edb54e6d6e34c3c"
-            }
-        ],
+        "authors": "640679c46edb54e6d6e34c3c",
         "date": "2022-03-08T13:00:00.000Z",
-        "likes": [
-            {
-                "_id": "640679c46edb54e6d6e34c38"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c3f"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c41"
-            }
-        ]
+        "likes": ["640679c46edb54e6d6e34c38","640679c46edb54e6d6e34c3f","640679c46edb54e6d6e34c41"]
     },
+    //mark
     {
         "title": "Why I Started Learning a New Language",
         "content": "Learning a new language has been a dream of mine for years. I always found the idea of being able to communicate with people from different cultures and countries incredibly exciting. It wasn't until last year, when I decided to take the plunge and start learning Spanish, that I realized just how much I had been missing out on.\n\nFor me, the biggest challenge has been staying motivated. It's easy to get discouraged when you feel like you're not making progress or when you struggle to understand a concept. But I've found that the key is to set realistic goals and to celebrate small victories along the way.\n\nI'm still far from fluent, but I'm proud of the progress I've made so far. Learning a new language has not only expanded my horizons but also given me a sense of accomplishment and a renewed sense of curiosity.",
@@ -337,14 +323,7 @@ const post = [
         "author": "640679c46edb54e6d6e34c3c",
         "abstract": "Learn about the benefits of meditation and how to practice it in this comprehensive guide.",
         "cateogory": new ObjectId("642a9b8fbfbc753224bb3ecd"),
-        "likes": [
-            {
-                "_id": "640679c46edb54e6d6e34c3f"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c40"
-            }
-        ],
+        "likes": ["640679c46edb54e6d6e34c3f", "640679c46edb54e6d6e34c40"],
         "comments": []
     },
     {
@@ -355,19 +334,7 @@ const post = [
         "author": "640679c46edb54e6d6e34c3d",
         "abstract": "Discover the science behind sleep and learn how to improve your sleep quality with these helpful tips.",
         "likes": [
-            {
-                "_id": "640679c46edb54e6d6e34c3e"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c3f"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c40"
-            },
-            {
-                "_id": "640679c46edb54e6d6e34c41"
-            }
-        ],
+           "640679c46edb54e6d6e34c3e","640679c46edb54e6d6e34c3f","640679c46edb54e6d6e34c40","640679c46edb54e6d6e34c41"],
         "comments": []
     },
     {

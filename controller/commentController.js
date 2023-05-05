@@ -533,6 +533,7 @@ exports.GetCommentSearchData = async (req, res, next) => {
                 var articleType = null; 
                 const collectedStrings = []; 
                 collectedStrings.push(content); 
+                collectedStrings.push(author.username)
                 if (post) {
                     collectedStrings.push(post.title);
                     articleType = "post"

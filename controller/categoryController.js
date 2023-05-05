@@ -23,7 +23,7 @@ exports.CategoryList = async (req, res, next) => {
 }
 exports.GetCategorySearchData = async (req, res, next) => {
     await Category.find({})
-        .select("name description post")
+        .select("name description post image")
         .populate({
             path: "post",
             model: "Post",
@@ -31,7 +31,7 @@ exports.GetCategorySearchData = async (req, res, next) => {
         })
         .sort({ name: 1 })
         .then(result => {
-            const data = result.map(({ _id, name, description, post }) => {
+            const data = result.map(({ _id, name, description, post, image }) => {
                 const collectedStrings = [];
                 collectedStrings.push(name);
                 collectedStrings.push(description); 
@@ -45,6 +45,7 @@ exports.GetCategorySearchData = async (req, res, next) => {
                     name, 
                     description,
                     post, 
+                    image, 
                     _id,
                 }
             }) 

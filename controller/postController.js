@@ -29,25 +29,38 @@ exports.AllPosts = async (req, res, next) => {
 
 exports.GetPostSearchData = async (req, res, next) => {
     await Post.find({ published: true })
-        .select("title content tag")
+        .select("title content tag datePublished lastEdited abstract likes comments")
         .sort({ title: 1 })
+        .populate({
+            path: "author",
+            model: "User",
+            select: "username"
+            })
         .populate({
             path: "tag",
             model: "Tag"
         }).then(result => {
-            const data = result.map(({ _id, title, content, tag }) => {
+            const data = result.map(({ _id, title, author, content, tag, abstract, datePublished, lastEdited, likes, comments }) => {
                 const collectedStrings = []
                 collectedStrings.push(content);
+                collectedStrings.push(abstract);
+                collectedStrings.push(author.username)
                 tag.forEach(item => {
                     collectedStrings.push(item.name)
                 })
                 collectedStrings.push(he.decode(title))
                 return{
-                        _id,
-                        title,
-                        content,
-                        tag,
-                        collectedStrings, 
+                    _id,
+                    title,
+                    content,
+                    tag,
+                    abstract, 
+                    author,
+                    collectedStrings, 
+                    datePublished,
+                    lastEdited,
+                    likes,
+                    comments,
                 }
             });
             res.status(200).json({ data })

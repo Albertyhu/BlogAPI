@@ -45,10 +45,10 @@ exports.GetAllUsers = async (req, res, next) => {
 
 exports.GetUserSearchData = async (req, res, next) => {
     await User.find({})
-        .select("name")
+        .select("username profile_pic biography email _id")
         .sort({ name: 1 })
         .then(result => {
-            const data = result.map(({_id, username, email, biography }) => {
+            const data = result.map(({_id, username, email, biography, profile_pic }) => {
                 const collectedStrings = []
                 collectedStrings.push(username)
                 collectedStrings.push(email)
@@ -59,6 +59,7 @@ exports.GetUserSearchData = async (req, res, next) => {
                     email,
                     biography,
                     collectedStrings, 
+                    profile_pic, 
                 }
             })
             res.status(200).json({ data })

@@ -503,40 +503,47 @@ exports.DeleteUserWithPassword = [
     }
 ]
 
-
 exports.GetUserByName = async (req, res, next) => {
-    try {
-        await User.findOne({ username: req.params.id })
-            .populate("connection")
-            .then(result => {
-                if (!result) {
-                    return res.status(404).json({ message: "User is not found." })
-                }
-                const user = {
-                    username: result.username,
-                    email: result.email,
-                    joinedDate: result.joinedDate,
-                    posts: result.posts,
-                    profile_pic: result.profile_pic,
-                    coverPhoto: result.coverPhoto,
-                    biography: result.biography,
-                    SocialMediaLinks: result.SocialMediaLinks,
-                    connection: result.connection, 
-                    _id: result._id,
-                    }
-                res.status(200).json({
-                    user, 
-                    message: `Successfully fetched ${result.username}`,
-                })
+    User.findOne({ username: req.params.id })
+        .populate("connection")
+        .populate({
+            path: "images",
+            model: "UserPhoto",
+            select: "image _id lastEdited publishedDate",
+            sort: { lastEdited: -1 }, 
+            limit: 5, 
+        })
+        .populate({
+            path: "posts",
+            model: "Post",
+            sort: { lastEdited: -1 },
+            limit: 5, 
+            select: "title content abstract datePublished lastEdited likes comments mainImage"
+        })
+        .then(result => {
+            if (!result) {
+                return res.status(404).json({ message: "User is not found." })
+            }
+            console.log("posts: ", result.posts)
+            const user = {
+                username: result.username,
+                email: result.email,
+                joinedDate: result.joinedDate,
+                profile_pic: result.profile_pic,
+                coverPhoto: result.coverPhoto,
+                biography: result.biography,
+                SocialMediaLinks: result.SocialMediaLinks,
+                connection: result.connection,
+                _id: result._id,
+                
+            }
+            res.status(200).json({
+                user,
+                images: result.images,
+                posts: result.posts, 
+                message: `Successfully fetched ${result.username}`,
             })
-            .catch(error => {
-                console.log("GetUserByName error 1: ", error)
-                return res.status(404).json({ error: `Error in fetching user: ${error}` })
-            })
-    } catch (error) {
-        console.log("GetUserByName error 2: ", error)
-        return res.status(404).json({ error: `Error in fetching user: ${error}` })
-    }
+        })
 }
 
 exports.SendConnectionRequest = [

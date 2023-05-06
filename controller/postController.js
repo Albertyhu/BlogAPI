@@ -4,6 +4,8 @@ const { body, validationResult } = require('express-validator')
 const he = require('he'); 
 const TagController = require('./tagController.js'); 
 const async = require('async');
+const User = require('../model/user.js'); 
+
 const {
     BufferImage,
     BufferArrayOfImages,
@@ -335,8 +337,6 @@ exports.CreatePostAndUpdateTags = [
             author,
         } = req.body;
 
-        var mainImage = null;
-
         if (abstractExceedLimit) {
             var lengthError = {
                 param: "abstract",
@@ -423,12 +423,20 @@ exports.CreatePostAndUpdateTags = [
                     Category.findByIdAndUpdate(category, {
                         $addToSet: {post: post._id}, 
                     })
-                        .then(() => callback(null, post, tags, updatedPost))
+                        .then((updatedCategory) => callback(null, post, tags, updatedPost, updatedCategory))
+                        .catch(err => {
+                            callback(err)
+                        })
+                },
+                function (post, tags, updatedPost, updatedCategory, callback) {
+                    User.findByIdAndUpdate(author, {
+                        $addToSet: {posts : post._id}
+                    }).then(() => callback(null, post, tags, updatedPost, updatedCategory))
                         .catch(err => {
                             callback(err)
                         })
                 }
-            ], (err, post, tags, updatedPost) => {
+            ], (err, post, tags, updatedPost, updatedCategory) => {
                 res.status(200).json({ post: updatedPost, message: "Post is successfully created." })
             })
 

@@ -93,6 +93,18 @@ const DeleteAllPost = async () => {
                 .catch(error => {
                     console.log("error: ", error)
                 })
+        },
+        function (callback) {
+            User.updateMany({}, {
+                $unset: {posts: 1}
+            }, { multi: true })
+                .then(() => {
+                    callback(null)
+                    console.log("Users are successfully updated.")
+                })
+                .catch(error => {
+                    console.log("error: ", error)
+                })
         }
     ], (error) => {
         if (error) {

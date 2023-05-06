@@ -47,6 +47,11 @@ router.put('/:id/update_user_profile', cors(), verifyToken, upload.fields([
     { name: "coverPhoto", maxCount: 1 }
 ]), UserController.UpdateUserProfile)
 
+router.put('/:id/edit_user_profile_as_admin', cors(), upload.fields([
+    { name: "profile_pic", maxCount: 1 },
+    { name: "coverPhoto", maxCount: 1 }
+]), UserController.UpdateUserProfile)
+
 router.delete('/:id/delete', cors(), UserController.DeleteUser)
 
 router.delete('/:id/delete_with_password', cors(), UserController.DeleteUserWithPassword)

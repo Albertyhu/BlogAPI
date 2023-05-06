@@ -275,6 +275,7 @@ exports.UploadPhotos = async (req, res, next) => {
             title: img.originalname,
             image: formattedImg,
             publishedDate: date,
+            lastEdited: date, 
             owner: req.params.id,
         }
     }))

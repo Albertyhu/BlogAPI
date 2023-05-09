@@ -18,21 +18,6 @@ const PopulateUsers = data => {
     })
 }
 
-//const PopulatePosts = async data => {
-//    var copy = data;
-//    const categoryList = await Category.find({})
-//    copy.forEach(val => {
-//        val.category = pickCategoryId(categoryList);
-//    })
-//    await Post.insertMany(copy)
-//        .then(() => {
-//           console.log("Posts are inserted.")
-//        })
-//        .catch((e) => {
-//            console.log("Error in uploading posts: ", e)
-//        })
-//}
-
 const PopulatePosts = async data => {
     var copy = data;
     const categoryList = await Category.find({})
@@ -135,10 +120,108 @@ const DeletePostsByTitle = async (title) => {
         })
 }
 
+
+const UploadComments = async (comments) => {
+    async.waterfall([
+        function (callback) {
+            Post.find({})
+                .then(postList => callback(null, postList))
+                .catch(error => {
+                    console.log("there was an error retrieving posts: ", error)
+                    callback(error)
+                })
+        },
+        function (postList, callback) {
+            User.find({})
+                .then(userList => callback(null, postList, userList))
+                .catch(error => {
+                    console.log("There was an error retrieving users: ", error)
+                    callback(error)
+                })
+        },
+        function (postList, userList, callback) {
+
+            const newComments = comments.map(comment => {
+                const selectedPost = postList[Math.floor(Math.random() * postList.length)];
+                const selectedUser = userList[Math.floor(Math.random() * userList.length)];
+                const content = `<p>${comment.content}</p>`
+                return {
+                    content, 
+                    datePublished: comment.dateCreated, 
+                    lastEdited: comment.dateCreated, 
+                    author: selectedUser._id, 
+                    likes: comment.likes,
+                    post: selectedPost._id, 
+                }
+            })
+            Comment.insertMany(newComments)
+                .then(commentList => callback(null, postList, userList, commentList))
+                .catch(error => {
+                    console.log("There was a problem creating new comments: ", error)
+                    callback(error)
+                })
+        },
+        function (postList, userList, commentList, callback) {
+            const promises = commentList.map(item => {
+                return Post.findByIdAndUpdate(item.post, {
+                    $addToSet: { comments: item._id }
+                })
+            })
+            Promise.all(promises)
+                .then(() => callback(null, postList, userList, commentList))
+                .catch(error => {
+                    console.log("There was a problem updating the posts: ", error)
+                    callback(error)
+                });
+        } 
+    ], (error) => {
+        if (error) {
+            console.log(error)
+        }
+    })
+}
+
+const DeleteComments = async () => {
+    async.waterfall([
+        function (callback) {
+            Comment.find({})
+                .then(commentList => callback(null, commentList))
+                .catch(error => {
+                    console.log("There was an error retrieving all comments: ", error)
+                })
+        },
+        function (commentList, callback) {
+            Comment.deleteMany({})
+                .then(deleteResult => callback(null, commentList, deleteResult))
+                    .catch(error => {
+                        console.log("There was an error deleting all comments: ", error)
+                    })
+        },
+        function (commentList, deleteResult, callback) {
+            const promises = commentList.map(item => {
+                return Post.findByIdAndUdpate(item.post, {
+                    $pull: {comments: item._id}
+                })
+            })
+            Promise.all(promises)
+                .then(() => callback(null))
+                .catch(error => {
+                    console.log("There was a problem updating the posts: ", error)
+                    callback(error)
+                });
+        }
+    ], (error) => {
+        if (error) {
+            console.log(error)
+        }
+    })
+}
+
 exports.populate = (req, res, next) => {
     async.parallel([
-        () => { PopulatePosts(SamplePosts) },
+        //() => { PopulatePosts(SamplePosts) },
         //() => { PopulateComments(SampleComments)},
+        () => { UploadComments(SampleComments)}
          //() => DeleteAllPost(),
         //() => { DeletePostsByTitle("How to pet a dog")},
         //() => DeleteAllPhotos(), 

@@ -43,7 +43,6 @@ exports.Login = async (req, res, next) => {
             joinedDate: result.joinedDate,
             id: result._id,
             "role": "member", 
-
         }
         const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
 

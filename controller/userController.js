@@ -1,8 +1,5 @@
 const User = require('../model/user.js'); 
-const SampleUsers = require('../sampleData/sampleUsers.js'); 
 const dataHooks = require('../util/dataHooks.js'); 
-const fs = require("fs"); 
-const path = require("path"); 
 const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
 const he = require('he');
@@ -10,13 +7,12 @@ const bcrypt = require("bcrypt")
 const {  findDuplicateNameAndEmail } = dataHooks(); 
 const {
     BufferImage,
-    BufferArrayOfImages, 
 } = require("../util/imageHooks.js")
 const UserPhoto = require('../model/user_photo.js')
-const mongoose =require('mongoose')
 const Category = require("../model/category.js");
 const async = require("async"); 
 const ConnectionRequest = require('../model/connection_request.js'); 
+const jwt = require('jsonwebtoken');
 
 exports.GetAllUsers = async (req, res, next) => {
     try { 
@@ -364,12 +360,12 @@ exports.UpdateUserProfile = [
                 newUpdate.profile_pic = await BufferImage(req.files.profile_pic[0])
             }
 
-            //If the user clears the profile pic from the input 
+            //If the user clears the profile pic from the input
             if (req.body.keepProfilePic === "false") {
-                newUpdate.profile_pic = null; 
+                newUpdate.profile_pic = null;
             }
 
-            //If the user clears the cover photo from the input 
+            //If the user clears the cover photo from the input
             if (typeof req.files.coverPhoto != 'undefined' && req.files.coverPhoto != null) {
                 newUpdate.coverPhoto = await BufferImage(req.files.coverPhoto[0])
             }
@@ -383,19 +379,22 @@ exports.UpdateUserProfile = [
                         email: req.body.email,
                         joinedDate: result.joinedDate,
                         id: result._id,
+                        "role": "member", 
                     }
-                    const ProfilePicture = result.profile_pic ? result.profile_pic : null; 
-                    const coverPhoto = result.coverPhoto ? result.coverPhoto : null; 
+                    const token = jwt.sign(updatedUser, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
+                    const ProfilePicture = result.profile_pic ? result.profile_pic : null;
+                    const coverPhoto = result.coverPhoto ? result.coverPhoto : null;
                     console.log(`${req.body.username}'s profile has successfully been updated.`)
                     return res.status(200).json({
                         user: updatedUser,
                         ProfilePicture,
                         coverPhoto,
+                        token, 
                         message: `${req.body.username}'s profile has successfully been updated.`
                     })
                 })
                 .catch(e => {
-                    return res.status(5000).json({ error: [{param: "server", msg: `${e}`}]})
+                    return res.status(500).json({ error: [{param: "server", msg: `${e}`}]})
                 })
         } catch (e) {
             return res.status(404).json({error: [{ param: "server", msg: `${e}` }] })

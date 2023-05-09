@@ -442,3 +442,5 @@ const comments = [
         "likes": ["640679c46edb54e6d6e34c3a", "640679c46edb54e6d6e34c3c", "640679c46edb54e6d6e34c3d"],
     },
 ]
+
+module.exports = comments;

@@ -225,8 +225,8 @@ exports.GetUser = async (req, res, next) => {
             email: user.email,
             joinedDate: user.joinedDate,
             posts: user.posts,
-            profile_pic: user.profile_pic,
-            coverPhoto:  user.coverPhoto,
+            profile_pic: user.profile_pic ? user.profile_pic : null,
+            coverPhoto:  user.coverPhoto ? user.coverPhoto : null,
             biography: user.biography,
             SocialMediaLinks: user.SocialMediaLinks,
             message: `Successfully fetched ${user.username}`,
@@ -336,11 +336,15 @@ exports.UpdateUserProfile = [
     body("profile_pic"),
     body("biography")
     .escape(),
+    body("keepProfilePic"),
+    body("keepCoverPhoto"),
     async (req, res) => {
         const {
             username,
             email,
-            biography
+            biography,
+            keepProfilePic,
+            keepCoverPhoto
         } = req.body
         var errors = validationResult(req);
         const DuplicateErrors = findDuplicateNameAndEmail(req.params.id, req.body.username, req.body.email)
@@ -360,10 +364,18 @@ exports.UpdateUserProfile = [
                 newUpdate.profile_pic = await BufferImage(req.files.profile_pic[0])
             }
 
+            //If the user clears the profile pic from the input 
+            if (req.body.keepProfilePic === "false") {
+                newUpdate.profile_pic = null; 
+            }
+
+            //If the user clears the cover photo from the input 
             if (typeof req.files.coverPhoto != 'undefined' && req.files.coverPhoto != null) {
                 newUpdate.coverPhoto = await BufferImage(req.files.coverPhoto[0])
             }
-           
+            if(req.body.keepCoverPhoto === "false") {
+                newUpdate.coverPhoto = null;
+            }
             await User.findByIdAndUpdate(req.params.id, newUpdate, {new: true})
                 .then((result) => {
                     const updatedUser = {
@@ -524,7 +536,6 @@ exports.GetUserByName = async (req, res, next) => {
             if (!result) {
                 return res.status(404).json({ message: "User is not found." })
             }
-            console.log("posts: ", result.posts)
             const user = {
                 username: result.username,
                 email: result.email,

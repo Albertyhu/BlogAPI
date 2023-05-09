@@ -6,3 +6,5 @@ LESSONS LEARNEED FROM BUILDING THE APP
 
 * Paginated scrolling doesn't seem to work well with images especially if they are large. 
 The loading is long and thus, it affects the user experience. 
+
+* You can't pass boolean values from client to server, only strings. 

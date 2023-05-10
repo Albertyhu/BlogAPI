@@ -11,6 +11,10 @@ router.get('/', cors(), (req, res) => {
     res.json({ msg: 'This is CORS-enabled for a Single Route' })
 }); 
 
+router.get("/sample_page", cors(), (req, res, next) => {
+res.render("index")
+})
+
 router.get("/users_and_categories", cors(), UserController.GetUsersAndCategories); 
 
 router.get("/get_popular_categories_and_posts/:count", cors(), GlobalController.GetPopularCategoriesAndPosts)

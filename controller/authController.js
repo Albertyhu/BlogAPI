@@ -156,7 +156,7 @@ exports.Register = [
                 "role": "member", 
             }
             const token = jwt.sign(savedUser, process.env.JWT_SECRET, { expiresIn: 60 * 60 })
-            return res.status(200).json({
+            res.status(200).json({
                 user: savedUser,
                 token,
                 message: "User is successfully saved in the database",

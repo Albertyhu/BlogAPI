@@ -6,7 +6,8 @@
   "scripts": {
     "test": "test",
     "build:css": "postcss public/stylesheets/tailwind.css -o public/stylesheets/style.css",
-    "devstart": "npm run build:css && nodemon ./bin/www"
+    "devstart": "npm run build:css && nodemon ./bin/www",
+    "start": "node ./bin/www"
   },
   "repository": {
     "type": "git",

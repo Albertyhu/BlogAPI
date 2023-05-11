@@ -479,12 +479,47 @@ exports.DeleteUser = async (req, res, next) => {
 
 }
 
+//exports.DeleteUserWithPassword = [
+//    body("currentPassword")
+//        .trim()
+//        .isLength({ min: 1 })
+//        .withMessage("The password field cannot be empty.")
+//        .escape(),
+//    body("confirmPassword")
+//        .trim()
+//        .isLength({ min: 1 })
+//        .withMessage("You must type your password again.")
+//        .custom((val, { req }) => {
+//            if (val != req.body.currentPassword) {
+//                throw new Error("Your passwords do not match.")
+//            }
+//            return true
+//        }),
+//    async (req, res, next) => {
+
+//        const errors = validationResult(req)
+//        if (!errors.isEmpty()) {
+//            console.log("DeleteUserWithPassword: ", errors.array())
+//            res.status(404).json({ error: errors.array() })
+//        }
+//        console.log("Deleting user")
+//        await User.deleteOne({ _id: req.params.id })
+//            .then(result => {
+//                console.log("User has successfully been deleted.")
+//                res.status(200).json({ message: "User has been deleted" });
+//            })
+//            .catch(e => {
+//                console.log("Error in deleting user: ", e)
+//                res.status(500).json({ message: "Internal service error", error: e.message });
+//            })
+//    }
+//]
+
 exports.DeleteUserWithPassword = [
     body("currentPassword")
         .trim()
         .isLength({ min: 1 })
-        .withMessage("The password field cannot be empty.")
-        .escape(),
+        .withMessage("The password field cannot be empty."),
     body("confirmPassword")
         .trim()
         .isLength({ min: 1 })
@@ -496,21 +531,57 @@ exports.DeleteUserWithPassword = [
             return true
         }),
     async (req, res, next) => {
+        const {
+            currentPassword, 
+            confirmPassword,  
+        } = req.body; 
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             console.log("DeleteUserWithPassword: ", errors.array())
             res.status(404).json({ error: errors.array() })
         }
-        console.log("Deleting user")
-        await User.deleteOne({ _id: req.params.id })
-            .then(result => {
-                console.log("User has successfully been deleted.")
-                res.status(200).json({ message: "User has been deleted" });
-            })
-            .catch(e => {
-                console.log("Error in deleting user: ", e)
-                res.status(500).json({ message: "Internal service error", error: e.message });
-            })
+        console.log("currentPassword", currentPassword)
+        console.log("confirmPassword", confirmPassword)
+        async.waterfall([
+            function (callback) {
+                User.findOne({ _id: req.params.id })
+                    .then(user => {
+                        callback(null, user)
+                    })
+                    .catch(error => {
+                        console.log("There was a problem finding the user")
+                        callback(error)
+                    })
+            },
+            function (user, callback) {
+                bcrypt.compare(currentPassword, user.password)
+                    .then(isValid => {
+                        console.log("isValid: ", isValid)
+                        if (!isValid) {
+                            const error = [{ msg: "Your password is incorrect.", param: "Bad client request" }]
+                            return res.status(404).json({error})
+                        }
+                        callback(null, user, isValid)
+                    })
+                    .catch(error => callback(error))
+            },
+            function (user, isValid, callback) {
+                console.log("Deleting user")
+                User.deleteOne({ _id: req.params.id })
+                    .then(() => {
+                        console.log("User has successfully been deleted.")
+                        callback(null, user, isValid)
+                    })
+                    .catch(error => {
+                        callback(error)
+                    })
+            }
+        ], (error, user, isValid) => {
+            if (error) {
+                res.status(500).json({error });
+            }
+            res.status(200).json({ message: "User has been deleted" });
+        })
     }
 ]
 

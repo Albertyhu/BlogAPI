@@ -122,9 +122,13 @@ exports.Register = [
         }
         try {
             const hashedPassword = await bcrypt.hash(req.body.password, 10)
-            console.log("req.file: ", req.file)
 
-            var ProfilePic = null;
+            const obj = {
+                username: he.decode(username.replace(/\s/g, '')),
+                email: he.decode(email),
+                password: hashedPassword,
+                joinedDate: Date.now(),
+            }
 
             if (req.file) {
                 const compressedImage = await sharp(req.file.buffer)
@@ -132,17 +136,10 @@ exports.Register = [
                     .jpeg({ quality: 75 }) // Compress the image using JPEG format with a quality of 80%
                     .toBuffer();
 
-                ProfilePic = {
+                obj.profile_pic = {
                     data: compressedImage,
                     contentType: req.file.mimetype,
                 }
-            }
-            const obj = {
-                username: he.decode(username.replace(/\s/g, '')),
-                email: he.decode(email),
-                password: hashedPassword,
-                joinedDate: Date.now(),
-                profile_pic: ProfilePic, 
             }
 
             const newUser = new User(obj);

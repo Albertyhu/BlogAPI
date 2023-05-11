@@ -52,12 +52,12 @@ router.put('/:id/edit_user_profile_as_admin', cors(), upload.fields([
     { name: "coverPhoto", maxCount: 1 }
 ]), UserController.UpdateUserProfile)
 
-router.delete('/:id/delete', cors(), UserController.DeleteUser)
+router.delete('/:id/delete', cors(), upload.none(), UserController.DeleteUser)
 
-router.delete('/:id/delete_with_password', cors(), UserController.DeleteUserWithPassword)
+router.delete('/:id/delete_with_password', cors(), verifyToken, upload.none(), UserController.DeleteUserWithPassword) 
 
 router.get("/:id/fetch_user", cors(), UserController.GetUserByName)
 
-router.post("/:id/send_connection_request", cors(), UserController.SendConnectionRequest); 
+router.post("/:id/send_connection_request", cors(), verifyToken, UserController.SendConnectionRequest); 
 
-module.exports = router;     
+module.exports = router;        

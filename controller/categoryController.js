@@ -27,7 +27,8 @@ exports.GetCategorySearchData = async (req, res, next) => {
         .populate({
             path: "post",
             model: "Post",
-            select: "title"
+            select: "title", 
+            limit: 5,
         })
         .sort({ name: 1 })
         .then(result => {

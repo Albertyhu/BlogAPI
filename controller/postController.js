@@ -676,10 +676,49 @@ exports.GetAllPostByNewest = async (req, res, next) => {
     }
 
     const start = PAGINATION * COUNT;
-    console.log("new")
-    console.log("start: ", start)
-    console.log("pagination: ", PAGINATION)
     await Post.find({ published: true })
+        .sort({ lastEdited: -1 })
+        .skip(start)
+        .limit(COUNT)
+        .populate("author")
+        .populate("tag")
+        .populate('category')
+        .then(paginatedResult => {
+            return res.status(200).json({ paginatedResult })
+        })
+        .catch(error => {
+            console.log("GetAllPostByNewest error: ", error)
+            return res.status(500).json({ error })
+        })
+}
+
+exports.GetPaginatedPostsByUser = async (req, res, next) => {
+    const error = [];
+    var COUNT
+    var PAGINATION
+    try {
+        COUNT = parseInt(req.params.count);
+        PAGINATION = parseInt(req.params.page)
+    } catch (e) {
+        error.push(e)
+    }
+    if (!Number.isInteger(COUNT) || !Number.isInteger(PAGINATION) || COUNT <= 0 || PAGINATION < 0) {
+        error.push('Invalid count or pagination value');
+    }
+    if (error.length > 0) {
+        console.log("GetAllPostByNewest error: ", error)
+        return res.status(400).json({ error })
+    }
+    const start = PAGINATION * COUNT;
+    var filter = {
+        author: req.params.userid
+    }
+ 
+    if (req.params.display_only_published === 'true') {
+        filter.published = true; 
+        console.log("displayonlypublished: ", true)
+    }
+    await Post.find(filter)
         .sort({ lastEdited: -1 })
         .skip(start)
         .limit(COUNT)

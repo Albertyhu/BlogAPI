@@ -19,6 +19,8 @@ router.get('/get_posts_by_category/:categoryID', cors(), postController.GetPosts
 
 router.get('/get_paginated_post_by_category/:categoryID/:page/:count', cors(), postController.GetPaginatedPostsByCategory);
 
+router.get("/:userid/get_paginated_posts_by_user/:page/:count/:display_only_published", cors(), postController.GetPaginatedPostsByUser)
+
 router.get("/get_newest_posts/:page/:count", cors(), postController.GetAllPostByNewest);
 
 router.get('/:id', cors(), postController.FindOnePost)

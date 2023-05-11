@@ -28,6 +28,7 @@ const PopulatePosts = async data => {
         post.datePublished = newDate;
         post.lastEdited = newDate; 
         post.category = category._id; 
+        post.published = true; 
         // Create a new Post document and set its properties
         const newPost = new Post(post);
 
@@ -217,14 +218,28 @@ const DeleteComments = async () => {
     })
 }
 
+const updateAllPosts = async (update) => {
+    await Post.updateMany({}, update)
+        .then(() => {
+            console.log("All posts have been updated: ", update)
+        })
+        .catch(error => {
+            console.log("updateAllPosts error: ", error)
+        })
+}
+
 exports.populate = (req, res, next) => {
     async.parallel([
         //() => { PopulatePosts(SamplePosts) },
         //() => { PopulateComments(SampleComments)},
-        () => { UploadComments(SampleComments)}
+        //() => { UploadComments(SampleComments)}
          //() => DeleteAllPost(),
+        //()=>DeleteCommments()
         //() => { DeletePostsByTitle("How to pet a dog")},
-        //() => DeleteAllPhotos(), 
+        //() => DeleteAllPhotos(),
+        () => updateAllPosts({
+            published: true
+            })
     ],
         function (err, results) {
             if (err) {

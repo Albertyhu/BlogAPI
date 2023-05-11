@@ -1,15 +1,15 @@
 {
   "ExpandedNodes": [
     "",
-    "\\controller",
-    "\\documentation",
     "\\middleware",
     "\\model",
     "\\public",
     "\\public\\uploads",
     "\\route",
     "\\sampleData",
-    "\\util"
+    "\\util",
+    "\\views",
+    "\\views\\partials"
   ],
   "PreviewInSolutionExplorer": false
 }

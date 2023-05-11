@@ -1,4 +1,5 @@
 const User = require('../model/user.js'); 
+const Post = require("../model/post.js")
 const dataHooks = require('../util/dataHooks.js'); 
 const { body, validationResult } = require("express-validator");
 const checkEmail = require('../util/checkEmail.js');
@@ -586,45 +587,65 @@ exports.DeleteUserWithPassword = [
 ]
 
 exports.GetUserByName = async (req, res, next) => {
-    User.findOne({ username: req.params.id })
-        .populate("connection")
-        .populate({
-            path: "images",
-            model: "UserPhoto",
-            select: "image _id lastEdited publishedDate",
-            sort: { lastEdited: -1 }, 
-            limit: 5, 
-        })
-        .populate({
-            path: "posts",
-            model: "Post",
-            sort: { lastEdited: -1 },
-            limit: 5, 
-            select: "title content abstract datePublished lastEdited likes comments mainImage"
-        })
-        .then(result => {
-            if (!result) {
-                return res.status(404).json({ message: "User is not found." })
+    async.waterfall([
+        function (callback) {
+            User.findOne({ username: req.params.id })
+                .populate("connection")
+                .populate({
+                    path: "images",
+                    model: "UserPhoto",
+                    select: "image _id lastEdited publishedDate",
+                    sort: { lastEdited: -1 },
+                    limit: 5,
+                })
+                .then(retrievedUser => callback(null, retrievedUser))
+                .catch(error => {
+                    console.log("Something went wrong with retrieving the user: ", error)
+                    callback(error)
+                })
+        },
+        function (retrievedUser, callback) {
+            var filter = {
+                author: retrievedUser._id, 
+            }; 
+            if (req.params.view_all_posts === 'false') {
+                filter.published = true; 
             }
-            const user = {
-                username: result.username,
-                email: result.email,
-                joinedDate: result.joinedDate,
-                profile_pic: result.profile_pic,
-                coverPhoto: result.coverPhoto,
-                biography: result.biography,
-                SocialMediaLinks: result.SocialMediaLinks,
-                connection: result.connection,
-                _id: result._id,
-                
-            }
-            res.status(200).json({
+            Post.find(filter)
+                .sort({ lastEdited: -1 })
+                .limit(5)
+                .then(postList => callback(null, retrievedUser, postList))
+                .catch(error => {
+                    console.log("Something went wrong with retrieving the post list: ", error)
+                    callback(error)
+                })
+        }
+    ], (error, retrievedUser, postList) => {
+        if (error) {
+            console.log("GetUserByName error: ", error)
+            res.status(400).json({error})
+        }
+
+        const user = {
+            username: retrievedUser.username,
+            email: retrievedUser.email,
+            joinedDate: retrievedUser.joinedDate,
+            profile_pic: retrievedUser.profile_pic,
+            coverPhoto: retrievedUser.coverPhoto,
+            biography: retrievedUser.biography,
+            SocialMediaLinks: retrievedUser.SocialMediaLinks,
+            connection: retrievedUser.connection,
+            _id: retrievedUser._id,
+        }
+
+        res.status(200).json({
                 user,
-                images: result.images,
-                posts: result.posts, 
-                message: `Successfully fetched ${result.username}`,
-            })
+                images: retrievedUser.images,
+                posts: postList, 
+                message: `Successfully fetched ${user.username}`,
         })
+    })
+
 }
 
 exports.SendConnectionRequest = [

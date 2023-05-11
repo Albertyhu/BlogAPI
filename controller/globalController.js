@@ -87,7 +87,6 @@ exports.GetPopularCategoriesAndPosts = async (req, res, next) => {
             console.log("GetPopularCategoriesAndPosts error: ", error)
             res.status(500).json({ error })
         } 
-        console.log(result.GetCategories)
         const TopPosts = result.GetPosts ? result.GetPosts : null;
         const TopCategories = result.GetCategories ? result.GetCategories : null;
         res.status(200).json({ TopPosts, TopCategories }) 

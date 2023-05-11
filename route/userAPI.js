@@ -56,7 +56,7 @@ router.delete('/:id/delete', cors(), upload.none(), UserController.DeleteUser)
 
 router.delete('/:id/delete_with_password', cors(), verifyToken, upload.none(), UserController.DeleteUserWithPassword) 
 
-router.get("/:id/fetch_user", cors(), UserController.GetUserByName)
+router.get("/:id/fetch_user/:view_all_posts", cors(), UserController.GetUserByName)
 
 router.post("/:id/send_connection_request", cors(), verifyToken, UserController.SendConnectionRequest); 
 

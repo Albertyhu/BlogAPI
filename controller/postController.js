@@ -15,7 +15,11 @@ exports.AllPosts = async (req, res, next) => {
     try {
         var post = await Post.find({published: true})
             .sort({ datePublished: -1 })
-            .populate("author")
+            .populate({
+                path: "author",
+                model: "User",
+                select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+            })
             .populate("tag")
             .exec() 
         if (post) {
@@ -36,7 +40,7 @@ exports.GetPostSearchData = async (req, res, next) => {
         .populate({
             path: "author",
             model: "User",
-            select: "username"
+            select: "username _id"
             })
         .populate({
             path: "tag",
@@ -81,6 +85,7 @@ exports.FindOnePost = async (req, res, next) => {
             .populate({
                 path: 'author',
                 model: "User",
+                select: "username email joinedDate _id", 
             })
             .populate({
                 path: 'comments',
@@ -129,7 +134,11 @@ exports.GetOnePostByAuthor = async (req, res, next) => {
         const PostID = req.params.postId;
         const AuthorID = req.params.authorId;
         const result = Post.findOne({ where: { _id: PostID, author: AuthorID } })
-            .populate("author")
+            .populate({
+                path: "author",
+                model: "User",
+                select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+            })
             .populate("category")
             .populate("comments")
             .exec();
@@ -147,7 +156,11 @@ exports.GetOnePostByAuthor = async (req, res, next) => {
 exports.GetPostsByCategory = async (req, res, next) => {
     try {
         await Post.find({ category: req.params.categoryID })
-            .populate("author")
+            .populate({
+                path: "author",
+                model: "User",
+                select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+            })
             .populate("tag")
             .then(result => {
                 res.status(200).json({post: result})
@@ -185,7 +198,11 @@ exports.GetPaginatedPostsByCategory = async (req, res, next) => {
             .skip(start)
             .limit(COUNT)
             .sort({lastEdited: -1})
-            .populate("author")
+            .populate({
+                path: "author",
+                model: "User",
+                select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+            })
             .populate("tag")
             .then(paginatedResult => {
                 res.status(200).json({ paginatedResult })
@@ -680,7 +697,11 @@ exports.GetAllPostByNewest = async (req, res, next) => {
         .sort({ lastEdited: -1 })
         .skip(start)
         .limit(COUNT)
-        .populate("author")
+        .populate({
+            path: "author",
+            model: "User",
+            select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+        })
         .populate("tag")
         .populate('category')
         .then(paginatedResult => {
@@ -722,7 +743,11 @@ exports.GetPaginatedPostsByUser = async (req, res, next) => {
         .sort({ lastEdited: -1 })
         .skip(start)
         .limit(COUNT)
-        .populate("author")
+        .populate({
+            path: "author",
+            model: "User",
+            select: "username email joinedDate posts profile_pic biography coverPhoto _id"
+        })
         .populate("tag")
         .populate('category')
         .then(paginatedResult => {

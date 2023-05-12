@@ -8,3 +8,5 @@ LESSONS LEARNEED FROM BUILDING THE APP
 The loading is long and thus, it affects the user experience. 
 
 * You can't pass boolean values from client to server, only strings. 
+
+* Be aware that when sending user data to the client, you need to exclude any sensitive information. 

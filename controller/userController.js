@@ -606,12 +606,22 @@ exports.GetUserByName = async (req, res, next) => {
         },
         function (retrievedUser, callback) {
             var filter = {
-                author: retrievedUser._id, 
-            }; 
+                author: retrievedUser._id,
+            };
             if (req.params.view_all_posts === 'false') {
-                filter.published = true; 
+                filter.published = true;
             }
             Post.find(filter)
+                .populate({
+                    path: 'author',
+                    model: 'User',
+                    select: "username _id"
+                })
+                .populate({
+                    path: "category",
+                    model: "Category",
+                    select: "name _id"
+                })
                 .sort({ lastEdited: -1 })
                 .limit(5)
                 .then(postList => callback(null, retrievedUser, postList))

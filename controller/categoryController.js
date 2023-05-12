@@ -59,7 +59,6 @@ exports.GetCategorySearchData = async (req, res, next) => {
 }
 
 exports.GetMostPopularCategories = async (req, res, next) => {
-    const COUNT = parseInt(req.params.count); 
     await Category.aggregate([{
         $project: {
             _id: 1,

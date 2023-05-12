@@ -245,7 +245,8 @@ exports.GetOnePhoto = async (req, res, next) => {
             populate: [
                 {
                 path: "author",
-                model: "User"
+                    model: "User",
+                    select: "username email joinedDate posts profile_pic biography coverPhoto _id",
                 },
                 {
                     path: "replies",
@@ -253,6 +254,7 @@ exports.GetOnePhoto = async (req, res, next) => {
                     populate: {
                         path: 'author',
                         model: 'User',
+                        select: "username email joinedDate posts profile_pic biography coverPhoto _id",
                     }
                 },
             ],

@@ -381,6 +381,7 @@ exports.EditComment = [
                             {
                             path: 'author',
                             model: "User",
+                            select: "username email joinedDate posts profile_pic biography coverPhoto _id"
                         })
                         .populate(
                                 {
@@ -389,6 +390,7 @@ exports.EditComment = [
                                 populate: ({
                                     path: "author",
                                     model: "User", 
+                                    select: "username email joinedDate posts profile_pic biography coverPhoto _id"
                                 }
                            ) 
                         })

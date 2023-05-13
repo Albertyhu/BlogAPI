@@ -85,7 +85,7 @@ exports.FindOnePost = async (req, res, next) => {
             .populate({
                 path: 'author',
                 model: "User",
-                select: "username email joinedDate _id", 
+                select: "username email joinedDate _id profile_pic", 
             })
             .populate({
                 path: 'comments',
@@ -94,6 +94,7 @@ exports.FindOnePost = async (req, res, next) => {
                     {
                         path: 'author',
                         model: 'User', 
+                        select: "username email joinedDate _id profile_pic", 
                     },
                     {
                         path: "replies",
@@ -101,6 +102,7 @@ exports.FindOnePost = async (req, res, next) => {
                         populate: {
                             path: 'author',
                             model: 'User',
+                            select: "username email joinedDate _id profile_pic", 
                         }
                     },
                     ]

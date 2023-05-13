@@ -432,15 +432,24 @@ exports.DeleteCompletely = [
             const rootId = req.body.rootId;
             const rootType = req.body.rootType;
             async.waterfall([
-                //delete the Comment document
                 function (callback) {
+                    Comment.findById(req.params.id)
+                        .then(comment => { callback(null, comment) })
+                        .catch(error => {
+                            console.log("Error occurred while retrieving comment: ", error)
+                            //callback(error)
+                        })
+                },
+                //delete the Comment document
+                function (comment, callback) {
                     Comment.deleteOne({ _id: req.params.id })
-                        .then(comment => {
-                            console.log("Document comment has been deleted: ", comment)
+                        .then(deleteResult => {
+                            console.log("Document comment has been deleted: ", deleteResult)
                             callback(null, comment)
                         })
                         .catch(error => {
-                            callback(error)
+                            console.log("Error occured while trying to delete comment: ", error)
+                           // callback(error)
                         })
                 },
                 //delete the replies of the comment 
@@ -451,13 +460,14 @@ exports.DeleteCompletely = [
                             callback(null, comment)
                         })
                         .catch(error => {
-                            callback(error)
+                            console.log("Error occurred while trying to delete all replies: ", error )
+                           // callback(error)
                         })
                 },
                 //remove comment ID from post
                 function (comment, callback) {
                     if (typeof comment.post != 'undefined' && comment.post != null && comment.post != "") {
-                        Post.findByIdandUpdate(comment.post, {
+                        Post.findByIdAndUpdate(comment.post, { 
                             $pull: { comments: req.params.id }
                         })
                             .then(() => {
@@ -465,7 +475,8 @@ exports.DeleteCompletely = [
                                 callback(null, comment)
                             })
                             .catch(error => {
-                                callback(error)
+                                console.log("Error while trying to remove comment ID from Post: ", error)
+                                //callback(error)
                             })
                     }
                     else if (typeof comment.userPhoto != 'undefined' && comment.userPhoto != null && comment.userPhoto != "") {
@@ -477,11 +488,12 @@ exports.DeleteCompletely = [
                                 callback(null, comment)
                             })
                             .catch(error => {
-                                callback(error)
+                                console.log("Error occurred while trying to delete comment ID from userPhoto: ", error)
+                              //  callback(error)
                             })
                     }
                     else
-                        callback(null, comment)
+                        callback(null)
                 },
                 function (comment, callback) {
                     if (comment.commentRepliedTo) {
@@ -492,10 +504,13 @@ exports.DeleteCompletely = [
                                 console.log("Removed comment Object Id from comment being replied to.")
                                 callback(null, comment)
                             })
-                            .catch(error => callback(error))
+                            .catch(error => {
+                                console.log("Error occurred while trying to pull comment from author: ", error)
+                                //callback(error)
+                            })
                     }
                     else
-                        callback(null, comment)
+                        callback(null)
                 }
             ], (error, comment) => {
                 if (error) {

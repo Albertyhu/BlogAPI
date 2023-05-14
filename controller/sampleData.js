@@ -9,6 +9,7 @@ const Comment = require('../model/comment.js');
 const Category = require('../model/category.js'); 
 const { pickCategoryId } = require('../util/randGen.js')
 const UserPhoto = require("../model/user_photo.js"); 
+const bcrypt = require('bcrypt')
 
 const PopulateUsers = data => {
     data.forEach( async person => {
@@ -228,6 +229,61 @@ const updateAllPosts = async (update) => {
         })
 }
 
+//const HashPassword = async (id) => {
+//    async.waterfall([
+//        function (callback) {
+//            User.findById(id)
+//                .then(user => callback(null, user))
+//                .catch(error => {
+//                    console.log("Error encountered when trying to find user: ", error)
+//                    callback(error)
+//                })
+//        },
+//        async function (user, callback) {
+//                bcrypt.hash(user.password, 10)
+//                    .then(hashedPassword => callback(null, user, hashedPassword))
+//                    .catch(error => {
+//                        console.log("Error trying to hash password: ", error)
+//                        callback(error)
+//                    }) 
+//        },
+//        function (user, hashedPassword, callback) {
+//            User.findByIdAndUpdate(id, {
+//                password: hashedPassword,
+//            })
+//                //.then((updatedUser) => { callback(null, user, hashedPassword, updatedUser) })
+//                //.catch(error => {
+//                //    console.log("Error encountered when trying to update password: ", error)
+//                //    callback(error)
+//                //})
+//        }
+//    ], (error) => {
+//        if (error) {
+//            console.log("HashPassword error: ", error)
+//        }
+//        console.log("Password is successfully hashed.")
+//    })
+//}
+
+const HashPassword = async (id, password) => {
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10)
+        console.log("hashedPassword: ", hashedPassword)
+        User.findByIdAndUpdate(id, {
+            password: hashedPassword,
+        })
+            .then((updated) => {
+                console.log("Password is successfully updated: ")
+            })
+            .catch(error => {
+                console.log("Error trying to update user: ", error)
+            })
+    } catch (error) {
+        console.log("Error trying to hash password: ", error)
+    }
+
+}
+
 exports.populate = (req, res, next) => {
     async.parallel([
         //() => { PopulatePosts(SamplePosts) },
@@ -237,9 +293,10 @@ exports.populate = (req, res, next) => {
         //()=>DeleteCommments()
         //() => { DeletePostsByTitle("How to pet a dog")},
         //() => DeleteAllPhotos(),
-        () => updateAllPosts({
-            published: true
-            })
+        () => HashPassword("640679c46edb54e6d6e34c3f", "pass123"), 
+        //() => updateAllPosts({
+        //    published: true
+        //    })
     ],
         function (err, results) {
             if (err) {

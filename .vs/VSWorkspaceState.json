@@ -11,6 +11,6 @@
     "\\views",
     "\\views\\partials"
   ],
-  "SelectedNode": "\\controller\\commentController.js",
+  "SelectedNode": "\\route\\commentAPI.js",
   "PreviewInSolutionExplorer": false
 }
